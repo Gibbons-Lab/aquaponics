@@ -18,7 +18,7 @@ annotations <- as.data.table(str_split_fixed(ids, " ", 4))
 names(annotations) <- c("seqnames", "genus", "species", "strain")
 counts_ann <- annotations[counts, on="seqnames"]
 
-fwrite(counts_ann, counts.csv)
+fwrite(counts_ann, "counts.csv")
 
 mat <- dcast(counts, seqnames ~ sample, value.var="counts", fill=0)
 seqnames <- mat$seqnames
