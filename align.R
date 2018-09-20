@@ -26,6 +26,7 @@ mat[, seqnames := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- seqnames
 setkey(annotations, seqnames)
-taxa <- annotations[rownames(mat)]
+taxa <- as.matrix(annotations[rownames(mat)])
+rownames(taxa) <- taxa[, 1]
 ps <- phyloseq(otu_table(mat, taxa_are_rows=TRUE), tax_table(taxa))
 saveRDS(ps, "taxonomy.rds")
