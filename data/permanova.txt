@@ -1,0 +1,15 @@
+Permutation test for adonis under reduced model
+Terms added sequentially (first to last)
+Permutation: free
+Number of permutations: 999
+
+vegan::adonis2(formula = phyloseq::distance(ps, method = "bray") ~ tank + inoculate + sample_set + environment, data = meta)
+            Df SumOfSqs      R2      F Pr(>F)    
+tank         1   0.5978 0.05608 2.0391  0.007 ** 
+inoculate    2   0.8448 0.07926 1.4408  0.008 ** 
+sample_set   2   2.1593 0.20256 3.6824  0.001 ***
+environment  2   1.4873 0.13952 2.5364  0.001 ***
+Residual    19   5.5706 0.52258                  
+Total       26  10.6598 1.00000                  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
