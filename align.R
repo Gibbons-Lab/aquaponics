@@ -20,6 +20,7 @@ counts_ann <- annotations[counts, on="seqnames"]
 
 fwrite(counts_ann, "counts.csv")
 
+# Build the fully annotated phyloseq object
 mat <- dcast(counts, seqnames ~ sample, value.var="counts", fill=0)
 seqnames <- mat$seqnames
 mat[, seqnames := NULL]
@@ -28,5 +29,9 @@ rownames(mat) <- seqnames
 setkey(annotations, seqnames)
 taxa <- as.matrix(annotations[rownames(mat)])
 rownames(taxa) <- taxa[, 1]
-ps <- phyloseq(otu_table(mat, taxa_are_rows=TRUE), tax_table(taxa))
+samples <- read.csv("barcodes.csv")
+rownames(samples) <- samples$isb_id
+ps <- phyloseq(otu_table(mat, taxa_are_rows=TRUE),
+               tax_table(taxa)
+               sample_data(samples))
 saveRDS(ps, "taxonomy.rds")
