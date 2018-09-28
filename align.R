@@ -7,17 +7,18 @@ library(stringr)
 files <- list.files("filtered", ".fastq.gz", full.names=T)
 
 if (!file.exists("alignments")) {
-    align_nanopore(files, "silva_species.fa.gz", threads=16)
+    align_nanopore(files, "silva_dna_132.fa.gz", threads=16)
 }
 
 alns <- list.files("alignments", ".bam", full.names=T)
 counts <- count_nanopore(alns)
-ref <- readFasta("silva_species.fa.gz")
-ids <- as.character(id(ref))
-annotations <- as.data.table(str_split_fixed(ids, " ", 4))
-names(annotations) <- c("seqnames", "genus", "species", "strain")
+ref <- readFasta("silva_dna_132.fa.gz")
+accs <- fread("zcat taxmap_132.txt.gz",
+              columns=c("primaryAccession", "start", "stop", "taxid")]
+accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
+annotations <- fread("silva_taxonomy_132.csv")
+annotations <- annotations[accs, on="seqnames"]
 counts_ann <- annotations[counts, on="seqnames"]
-
 fwrite(counts_ann, "data/counts.csv")
 
 # Build the fully annotated phyloseq object
