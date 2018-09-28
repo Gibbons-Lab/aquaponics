@@ -14,7 +14,7 @@ alns <- list.files("alignments", ".bam", full.names=T)
 counts <- count_nanopore(alns)
 ref <- readFasta("silva_dna_132.fa.gz")
 accs <- fread("zcat taxmap_132.txt.gz",
-              columns=c("primaryAccession", "start", "stop", "taxid")]
+              columns=c("primaryAccession", "start", "stop", "taxid"))
 accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
 annotations <- fread("silva_taxonomy_132.csv")
 annotations <- annotations[accs, on="seqnames"]
