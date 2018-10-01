@@ -1,4 +1,3 @@
-import fileinput
 import gzip
 from glob import glob
 from os.path import join, exists
