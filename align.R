@@ -17,9 +17,10 @@ accs <- fread("zcat data/taxmap_132.txt.gz",
               columns=c("primaryAccession", "start", "stop", "taxid"))
 accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
 annotations <- fread("data/silva_taxonomy_132.csv")
-annotations <- annotations[accs, on="taxid"]
+annotations <- annotations[accs, on="taxid", allow.cartesian=TRUE]
 counts_ann <- annotations[counts, on="seqnames"]
 fwrite(counts_ann, "data/counts.csv")
+rm(annotations)
 
 # Build the fully annotated phyloseq object
 mat <- dcast(counts, seqnames ~ sample, value.var="counts", fill=0)
@@ -28,7 +29,11 @@ mat[, seqnames := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- seqnames
 setkey(annotations, seqnames)
-taxa <- as.matrix(annotations[rownames(mat)])
+taxa <- dcast(unique(counts_ann, .(seqnames, rank, name)),
+              seqnames ~ rank,
+              value.var="name", fill=NA)
+setkey(taxa, "seqnames")
+taxa <- as.matrix(taxa[rownames(mat)])
 rownames(taxa) <- taxa[, 1]
 samples <- read.csv("barcodes.csv")
 rownames(samples) <- samples$isb_id
