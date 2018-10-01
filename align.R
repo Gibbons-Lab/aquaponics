@@ -28,7 +28,6 @@ seqnames <- mat$seqnames
 mat[, seqnames := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- seqnames
-setkey(annotations, seqnames)
 taxa <- dcast(unique(counts_ann, .(seqnames, rank, name)),
               seqnames ~ rank,
               value.var="name", fill=NA)
