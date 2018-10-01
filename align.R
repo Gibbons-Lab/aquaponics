@@ -28,7 +28,7 @@ seqnames <- mat$seqnames
 mat[, seqnames := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- seqnames
-taxa <- dcast(unique(counts_ann, .(seqnames, rank, name)),
+taxa <- dcast(unique(counts_ann, list(seqnames, rank, name)),
               seqnames ~ rank,
               value.var="name", fill=NA)
 setkey(taxa, "seqnames")
