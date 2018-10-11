@@ -13,7 +13,7 @@ library(mbtools)
 
 ps <- readRDS("data/taxonomy.rds")
 subsets <- list(c("bioball", "T2"), c("fish feces", "T0"), c("root", "T2"))
-vars <- c("no_leaves", "height", "inoculate")
+vars <- c("no_leaves", "height", "root_length", "inoculate")
 tests <- list()
 for (s in subsets) {
     psub <- subset_samples(ps, environment == s[1] & sample_set == s[2])
@@ -30,15 +30,15 @@ Now let's readjust the p values and check the histogram.
 ```{r}
 library(IHW)
 
-pval_model <- ihw(pvalue ~ baseMean, 0.05, data=tests)
+#pval_model <- ihw(pvalue ~ baseMean, 0.05, data=tests)
 #tests[, padj := adj_pvalues(pval_model)]
 
-ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + geom_histogram(aes(x=padj), fill="blue")
+ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + geom_histogram(aes(x=padj), bins=20, fill="blue")
 ```
 
 Let's visuzlize the effect sizes and significant tests.
 
-```{r, fig.width=9, fig.height=7}
+```{r, fig.width=10, fig.height=7}
 lfc_plot <- ggplot(tests[padj < 0.05],
                    aes(x=log2FoldChange, y=reorder(genus, -log2FoldChange),
                        color=baseMean)) +
@@ -90,6 +90,15 @@ plot_counts(psub, variable="no_leaves", taxa=sigs) +
 ggsave("figures/leaves_bioball.pdf", width=9, height=9)
 ```
 
+Root length:
+
+```{r, fig.height=6, fig.width=6}
+sigs <- bioballs[padj < 0.05 & variable == "root_length", unique(genus)]
+plot_counts(psub, variable="root_length", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/root_length_bioball.pdf", width=9, height=9)
+```
+
 ## Roots
 
 ```{r, fig.width=4, fig.height=5}
@@ -114,9 +123,19 @@ ggsave("figures/heights_root.pdf", width=5, height=4)
 
 Number of leaves:
 
-```{r, fig.height=4, fig.width=5}
+```{r, fig.height=3, fig.width=5}
 sigs <- roots[padj < 0.05 & variable == "no_leaves", unique(genus)]
 plot_counts(psub, variable="no_leaves", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/leaves_root.pdf", width=5, height=4)
+```
+
+
+Root length:
+
+```{r, fig.height=3, fig.width=5}
+sigs <- roots[padj < 0.05 & variable == "root_length", unique(genus)]
+plot_counts(psub, variable="root_length", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/root_length_root.pdf", width=5, height=4)
 ```

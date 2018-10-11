@@ -29,10 +29,19 @@ plot_richness(ps, x="sample_set", color="environment", shape="inoculate",
 
 ## Heatmaps
 
-```{r, fig.height=20, fig.width=6}
+```{r, fig.height=20, fig.width=8}
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps)) %>% filter_counts()
 pheatmap(log10(t(counts) + 1))
 ```
 
+Heatmap for Planctomyces:
+
+```{r, fig.height=3, fig.width=8}
+library(pheatmap)
+
+plancto <- subset_taxa(ps, phylum == "Planctomycetes")
+counts <- as.matrix(taxa_count(plancto, "species")) %>% filter_counts()
+pheatmap(log10(t(counts) + 1))
+```
