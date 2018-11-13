@@ -12,22 +12,22 @@ if (!file.exists("alignments")) {
 
 alns <- list.files("alignments", ".bam", full.names=T)
 cat("Counting reads...\n")
-counts <- count_nanopore(alns)
+counts <- count_transcripts(alns, "/proj/gibbons/refs/silva_dna_132.fna.gz")
 accs <- fread("zcat data/taxmap_132.txt.gz",
               select=c("primaryAccession", "start", "stop", "taxid"))
 accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
 annotations <- fread("data/silva_taxonomy_132.csv")
 annotations <- annotations[accs, on="taxid", allow.cartesian=TRUE]
-counts_ann <- annotations[counts, on="seqnames"]
+counts_ann <- annotations[counts, on=c(seqnames="transcript")]
 fwrite(counts_ann, "data/counts.csv")
 rm(annotations)
 
 # Build the fully annotated phyloseq object
-mat <- dcast(counts, seqnames ~ sample, value.var="counts", fill=0)
-seqnames <- mat$seqnames
-mat[, seqnames := NULL]
+mat <- dcast(counts, transcript ~ sample, value.var="counts", fill=0)
+ids <- mat$transcript
+mat[, transcript := NULL]
 mat <- as.matrix(mat)
-rownames(mat) <- seqnames
+rownames(mat) <- ids
 taxa <- dcast(unique(counts_ann[, .(seqnames, rank, name)]),
               seqnames ~ rank,
               value.var="name", fill=NA)
