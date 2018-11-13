@@ -22,7 +22,7 @@ The reads that passed the filter (around 30 - 50%) were passed off to the alignm
 ## Mapping
 
 Reads were mapped to >300k 16S reference sequences from the SILVA database (version 132). Mapping was performed with minimap2
-using the Oxford Nanopore presets. The highest scoring hit was selected for each read and hits were counted for each reference sequence to obtain the count matrices. 
+using the Oxford Nanopore presets. Counting and resolution of multi-mapping was performed with an EM algorithm similar to what [kalliso uses](https://www.nature.com/articles/nbt.3519) assuming a single start position for each transcript. 
 
 see https://github.com/Gibbons-Lab/mbtools for implementation details.
 
