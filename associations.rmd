@@ -1,0 +1,141 @@
+---
+title: "Association analysis"
+output: html_notebook
+---
+
+# Running the analysis
+
+We will start by running an association analysis using DESeq2. In short we will extract our data subsets (particular sample site
+at a particular time) and get the association with basic plant growth indicators and the inoculate.
+
+```{r}
+library(mbtools)
+
+ps <- readRDS("data/taxonomy.rds")
+subsets <- list(c("bioball", "T2"), c("fish feces", "T0"), c("root", "T2"))
+vars <- c("no_leaves", "height", "root_length", "inoculate")
+tests <- list()
+for (s in subsets) {
+    psub <- subset_samples(ps, environment == s[1] & sample_set == s[2])
+    res <- association(psub, vars, in_samples=0.5)
+    res[, "site" := s[1]]
+    tests[[s[1]]] <- res
+}
+
+tests <- rbindlist(tests)
+```
+
+Now let's readjust the p values and check the histogram.
+
+```{r}
+library(IHW)
+
+#pval_model <- ihw(pvalue ~ baseMean, 0.05, data=tests)
+#tests[, padj := adj_pvalues(pval_model)]
+
+ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + geom_histogram(aes(x=padj), bins=20, fill="blue")
+```
+
+Let's visuzlize the effect sizes and significant tests.
+
+```{r, fig.width=10, fig.height=7}
+lfc_plot <- ggplot(tests[padj < 0.05],
+                   aes(x=log2FoldChange, y=reorder(genus, -log2FoldChange),
+                       color=baseMean)) +
+        geom_vline(xintercept=0, lty="dashed", color="black") +
+        geom_point(size=2) +
+        geom_errorbarh(aes(xmin=log2FoldChange - lfcSE,
+                        xmax=log2FoldChange + lfcSE)) +
+        facet_grid(site ~ variable, scales="free_y", space="free_y") + scale_color_gradient(trans="log10") +
+        labs(x="log fold change", y="", color="abundance") + theme_bw()
+ggsave(sprintf("figures/lfcs.pdf"), width=9, height=7)
+print(lfc_plot)
+```
+
+As we can see there are very little hits in fish feces but some in the roots and many in the bioballs. Let's investigate the bioballs and roots a bit further.
+
+## Bioballs
+
+```{r, fig.width=9, fig.height=9}
+bioballs <- tests[site == "bioball"]
+psub <- subset_samples(ps, environment == "bioball" & sample_set == "T2")
+sigs <- bioballs[padj < 0.05 & variable == "inoculate", unique(genus)]
+data <- plot_counts(psub, "inoculate", taxa=sigs, only_data=T)
+inoc_plot <- ggplot(data, aes(x=value, y=reads + 0.5, col=value)) +
+    geom_jitter(width=0.25) + scale_y_log10() +
+    facet_wrap(~ taxa) +
+    labs(x="", y="normalized counts") + guides(color=F) + theme_bw() +
+    theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
+ggsave("figures/inoculation_bioball.pdf", width=9, height=9)
+print(inoc_plot)
+```
+
+### Plant Data
+
+Plant height:
+
+```{r, fig.height=9, fig.width=9}
+sigs <- bioballs[padj < 0.05 & variable == "height", unique(genus)]
+plot_counts(psub, variable="height", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/heights_bioball.pdf", width=9, height=9)
+```
+
+Number of leaves:
+
+```{r, fig.height=9, fig.width=9}
+sigs <- bioballs[padj < 0.05 & variable == "no_leaves", unique(genus)]
+plot_counts(psub, variable="no_leaves", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/leaves_bioball.pdf", width=9, height=9)
+```
+
+Root length:
+
+```{r, fig.height=6, fig.width=6}
+sigs <- bioballs[padj < 0.05 & variable == "root_length", unique(genus)]
+plot_counts(psub, variable="root_length", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/root_length_bioball.pdf", width=9, height=9)
+```
+
+## Roots
+
+```{r, fig.width=4, fig.height=5}
+roots <- tests[site == "root"]
+psub <- subset_samples(ps, environment == "root" & sample_set == "T2")
+sigs <- roots[padj < 0.05 & variable == "inoculate", unique(genus)]
+data <- plot_counts(psub, "inoculate", taxa=sigs, only_data=T)
+inoc_plot %+% data
+ggsave("figures/inoculation_root.pdf", width=4, height=5)
+```
+
+### Plant Data
+
+Plant height:
+
+```{r, fig.height=4, fig.width=5}
+sigs <- roots[padj < 0.05 & variable == "height", unique(genus)]
+plot_counts(psub, variable="height", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/heights_root.pdf", width=5, height=4)
+```
+
+Number of leaves:
+
+```{r, fig.height=3, fig.width=5}
+sigs <- roots[padj < 0.05 & variable == "no_leaves", unique(genus)]
+plot_counts(psub, variable="no_leaves", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/leaves_root.pdf", width=5, height=4)
+```
+
+
+Root length:
+
+```{r, fig.height=3, fig.width=5}
+sigs <- roots[padj < 0.05 & variable == "root_length", unique(genus)]
+plot_counts(psub, variable="root_length", taxa=sigs) +
+    geom_smooth(method="glm") + theme_bw()
+ggsave("figures/root_length_root.pdf", width=5, height=4)
+```
