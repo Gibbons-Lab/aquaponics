@@ -11,8 +11,7 @@ if (!file.exists("alignments")) {
 }
 
 alns <- list.files("alignments", ".bam", full.names=T)
-cat("Counting reads...\n")
-counts <- count_transcripts(alns, "/proj/gibbons/refs/silva_dna_132.fna.gz")
+counts <- count_transcripts(alns, "/proj/gibbons/refs/silva_dna_132.fna.gz", threads=20)
 accs <- fread("zcat data/taxmap_132.txt.gz",
               select=c("primaryAccession", "start", "stop", "taxid"))
 accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
