@@ -1,0 +1,65 @@
+---
+title: "Plant data"
+output: html_notebook
+---
+
+Those are just some visualizations for plant growth across the tanks. 
+
+```{r}
+library(data.table)
+
+plants <- fread("data/plant_data_clean.csv")
+plants[, date := as.Date(date)]
+```
+
+## Time courses
+
+```{r}
+dna_dates <- as.Date(c("2017-07-12", "2017-08-19", "2017-08-27"))
+
+sampled <- plants[sample != "Growth Bed"]
+sampled[, date := as.Date(date)]
+sampled[, inoculum := "aquaponics system"]
+sampled[tank %in% 1:3, inoculum := "commercial"]
+summaries <- sampled[, .(num_leaves=mean(no_leaves, na.rm=T), num_leaves_sd=sd(no_leaves, na.rm=T),
+                        height=mean(height, na.rm=T), height_sd=sd(height, na.rm=T), inoculum=inoculum[1]), by=c("date", "tank")]
+```
+
+Plant height
+
+```{r}
+ggplot(summaries[!is.na(height)], aes(x=date, y=height, col=factor(tank), group=factor(tank))) + 
+  geom_vline(xintercept=dna_dates[1], col="grey") +
+  geom_ribbon(aes(ymin=height-height_sd, ymax=height+height_sd, fill=factor(tank)), alpha=0.25, col=NA)  + 
+  geom_line(size=1) + theme_bw() + labs(y="plant height [cm]", color="tank", fill="tank")
+ggsave("figures/plant_height_sds.pdf")
+```
+
+Number of leaves
+
+```{r}
+ggplot(summaries[!is.na(num_leaves_sd)], aes(x=date, y=num_leaves, col=factor(tank), group=factor(tank))) + 
+  geom_ribbon(aes(ymin=num_leaves-num_leaves_sd, ymax=num_leaves+num_leaves_sd, fill=factor(tank)), alpha=0.25, col=NA)  + 
+  geom_line(size=1) + theme_bw() + labs(y="num. leaves", color="tank", fill="tank")
+ggsave("figures/num_leaves_sds.pdf")
+```
+
+Height Growth bed
+
+```{r}
+ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], aes(x=date, y=height_avg, col=factor(tank))) + 
+  geom_vline(xintercept=dna_dates, color="grey50", lty="dashed") +
+  geom_point() + geom_line(aes(group=factor(tank))) + theme_bw() + 
+  labs(y="average height [cm]", color="tank")
+ggsave("figures/plant_height_avg.pdf")
+```
+
+Num. Leaves growth bed
+
+```{r}
+ggplot(plants[sample == "Growth Bed" & !is.na(no_leaves_avg)], aes(x=date, y=no_leaves_avg, col=factor(tank))) + 
+  geom_vline(xintercept=dna_dates, color="grey50", lty="dashed") +
+  geom_point() + geom_line(aes(group=factor(tank))) + theme_bw() +
+  labs(y="average num. leaves", color="tank")
+ggsave("figures/num_leaves_avg.pdf")
+```

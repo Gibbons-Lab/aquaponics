@@ -15,16 +15,34 @@ ps
 ## Ordination
 
 ```{r, fig.width=6, fig.height=4}
-ord <- ordinate(ps, method="PCoA")
+ord <- ordinate(rarefy_even_depth(ps), method="PCoA")
 plot_ordination(ps, ord, color="environment", shape="inoculate", label="isb_id") + theme_bw()
 ggsave("figures/pcoa.pdf")
 ```
 
+### Dynamics
+
+```{r}
+bioballs <- subset_samples(ps, environment == "bioball" | isb_id %in% c("T0B", "T0Comm"))
+ord <- ordinate(rarefy_even_depth(bioballs), method="PCoA")
+df <- plot_ordination(bioballs, ord, color="inoculate", justDF = TRUE)
+
+ggplot(df, aes(x=Axis.1, y=Axis.2, color=inoculate)) + geom_point(size=3, alpha=0.5) + 
+  geom_line(aes(group=tank), data=function(x) dplyr::filter(x, environment == "bioball"), 
+            arrow=arrow(ends = "first", type = "closed", length = unit(0.2, "cm"))) + 
+  geom_text(aes(label=isb_id), nudge_y=-0.02, size=3) +
+  theme_bw() + labs(x=sprintf("Axis.1 [%.1f%%]", ord$values[1, 2] * 100), y=sprintf("Axis.2 [%.1f%%]", ord$values[2, 2] * 100))
+ggsave("figures/dynamics.pdf")
+```
 ## Richness
 
-```{r, fig.width=8, fig.height=3}
-plot_richness(ps, x="sample_set", color="environment", shape="inoculate", 
-              measures=c("Observed", "Shannon")) + theme_bw()
+```{r, fig.width=6, fig.height=4}
+richness <- cbind(estimate_richness(rarefy_even_depth(ps))[sample_names(ps), ], sample_data(ps))
+
+pl <- ggplot(richness, aes(x=sample_set, y=Shannon, shape=inoculate, color=environment, group=inoculate)) +        
+        geom_point(position=position_dodge(width=0.5)) + theme_bw() + labs(x="time point", y="shannon diversity")
+ggsave("figures/diversity.pdf", width=6, height=4)
+pl
 ```
 
 ## Heatmaps
@@ -33,7 +51,7 @@ plot_richness(ps, x="sample_set", color="environment", shape="inoculate",
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps)) %>% filter_counts()
-pheatmap(log10(t(counts) + 1))
+pheatmap(log10(t(counts) + 1), width = 8, height = 20, filename = "figures/heatmap.pdf")
 ```
 
 Heatmap for Planctomyces:

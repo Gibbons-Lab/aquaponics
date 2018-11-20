@@ -12,12 +12,22 @@ at a particular time) and get the association with basic plant growth indicators
 library(mbtools)
 
 ps <- readRDS("data/taxonomy.rds")
+sdata <- fread("data/plant_data_clean.csv")
+sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N], 
+                                                      height=height_avg[.N], 
+                                                      root_length=root_length_avg[.N]), 
+                                                   by=tank]
+old <- as(sample_data(ps), "data.frame")
+sdata <- as.data.frame(sdata[old, on="tank"])
+rownames(sdata) <- rownames(old)
+sample_data(ps) <- sdata
+
 subsets <- list(c("bioball", "T2"), c("fish feces", "T0"), c("root", "T2"))
 vars <- c("no_leaves", "height", "root_length", "inoculate")
 tests <- list()
 for (s in subsets) {
     psub <- subset_samples(ps, environment == s[1] & sample_set == s[2])
-    res <- association(psub, vars, in_samples=0.5)
+    res <- association(psub, vars, min_count = 100, in_samples=0.05)
     res[, "site" := s[1]]
     tests[[s[1]]] <- res
 }
@@ -28,17 +38,12 @@ tests <- rbindlist(tests)
 Now let's readjust the p values and check the histogram.
 
 ```{r}
-library(IHW)
-
-#pval_model <- ihw(pvalue ~ baseMean, 0.05, data=tests)
-#tests[, padj := adj_pvalues(pval_model)]
-
-ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + geom_histogram(aes(x=padj), bins=20, fill="blue")
+ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20, alpha=0.5) + geom_histogram(aes(x=padj), bins=20, fill="blue", alpha=0.5)
 ```
 
 Let's visuzlize the effect sizes and significant tests.
 
-```{r, fig.width=10, fig.height=7}
+```{r, fig.width=10, fig.height=8}
 lfc_plot <- ggplot(tests[padj < 0.05],
                    aes(x=log2FoldChange, y=reorder(genus, -log2FoldChange),
                        color=baseMean)) +
@@ -104,7 +109,7 @@ ggsave("figures/root_length_bioball.pdf", width=9, height=9)
 ```{r, fig.width=4, fig.height=5}
 roots <- tests[site == "root"]
 psub <- subset_samples(ps, environment == "root" & sample_set == "T2")
-sigs <- roots[padj < 0.05 & variable == "inoculate", unique(genus)]
+sigs <- roots[padj < 0.2 & variable == "inoculate", unique(genus)]
 data <- plot_counts(psub, "inoculate", taxa=sigs, only_data=T)
 inoc_plot %+% data
 ggsave("figures/inoculation_root.pdf", width=4, height=5)
@@ -115,7 +120,7 @@ ggsave("figures/inoculation_root.pdf", width=4, height=5)
 Plant height:
 
 ```{r, fig.height=4, fig.width=5}
-sigs <- roots[padj < 0.05 & variable == "height", unique(genus)]
+sigs <- roots[padj < 0.1 & variable == "height", unique(genus)]
 plot_counts(psub, variable="height", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/heights_root.pdf", width=5, height=4)
@@ -124,7 +129,7 @@ ggsave("figures/heights_root.pdf", width=5, height=4)
 Number of leaves:
 
 ```{r, fig.height=3, fig.width=5}
-sigs <- roots[padj < 0.05 & variable == "no_leaves", unique(genus)]
+sigs <- roots[padj < 0.1 & variable == "no_leaves", unique(genus)]
 plot_counts(psub, variable="no_leaves", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/leaves_root.pdf", width=5, height=4)
@@ -134,7 +139,7 @@ ggsave("figures/leaves_root.pdf", width=5, height=4)
 Root length:
 
 ```{r, fig.height=3, fig.width=5}
-sigs <- roots[padj < 0.05 & variable == "root_length", unique(genus)]
+sigs <- roots[padj < 0.1 & variable == "root_length", unique(genus)]
 plot_counts(psub, variable="root_length", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/root_length_root.pdf", width=5, height=4)
