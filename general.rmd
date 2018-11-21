@@ -54,12 +54,11 @@ counts <- as.matrix(taxa_count(ps)) %>% filter_counts()
 pheatmap(log10(t(counts) + 1), width = 8, height = 20, filename = "figures/heatmap.pdf")
 ```
 
-Heatmap for Planctomyces:
+Heatmap for Nitrifiers:
 
 ```{r, fig.height=3, fig.width=8}
 library(pheatmap)
 
-plancto <- subset_taxa(ps, phylum == "Planctomycetes")
-counts <- as.matrix(taxa_count(plancto, "species")) %>% filter_counts()
+counts <- as.matrix(taxa_count(ps)[grepl("Nitro", taxa)])
 pheatmap(log10(t(counts) + 1))
 ```
