@@ -10,6 +10,8 @@ library(data.table)
 
 plants <- fread("data/plant_data_clean.csv")
 plants[, date := as.Date(date)]
+plants[, inoculum := "aquaponics system"]
+plants[tank %in% 1:3, inoculum := "commercial"]
 ```
 
 ## Time courses
@@ -19,8 +21,6 @@ dna_dates <- as.Date(c("2017-07-12", "2017-08-19", "2017-08-27"))
 
 sampled <- plants[sample != "Growth Bed"]
 sampled[, date := as.Date(date)]
-sampled[, inoculum := "aquaponics system"]
-sampled[tank %in% 1:3, inoculum := "commercial"]
 summaries <- sampled[, .(num_leaves=mean(no_leaves, na.rm=T), num_leaves_sd=sd(no_leaves, na.rm=T),
                         height=mean(height, na.rm=T), height_sd=sd(height, na.rm=T), inoculum=inoculum[1]), by=c("date", "tank")]
 ```
@@ -62,4 +62,13 @@ ggplot(plants[sample == "Growth Bed" & !is.na(no_leaves_avg)], aes(x=date, y=no_
   geom_point() + geom_line(aes(group=factor(tank))) + theme_bw() +
   labs(y="average num. leaves", color="tank")
 ggsave("figures/num_leaves_avg.pdf")
+```
+
+Root length growth bed
+
+```{r, fig.width=4, fig.height=4}
+ggplot(plants[sample == "Growth Bed" & !is.na(root_length_avg)], aes(x=inoculum, y=root_length_avg, col=inoculum)) +
+  geom_boxplot() + geom_jitter(width=0.2) + theme_bw() +
+  labs(y="average root length [cm]", color="tank", x="", color="") + guides(color=FALSE) +
+ggsave("figures/root_length_avg.pdf")
 ```
