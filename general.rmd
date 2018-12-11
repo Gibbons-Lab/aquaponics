@@ -12,6 +12,12 @@ ps <- readRDS("data/taxonomy.rds")
 ps
 ```
 
+Taxa plots
+
+```{r}
+plot_taxa(ps, level = "phylum")
+```
+
 ## Ordination
 
 ```{r, fig.width=6, fig.height=4}
@@ -47,12 +53,12 @@ pl
 
 ## Heatmaps
 
-```{r, fig.height=20, fig.width=8}
+```{r, fig.height=8, fig.width=14}
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps)) %>% filter_counts(presence = 0.1)
 pheatmap(log10(t(counts) + 1), width = 8, height = 20, filename = "figures/heatmap.pdf")
-pheatmap(log10(t(counts) + 1))
+pheatmap(log10(counts + 1))
 ```
 
 Heatmap for Nitrifiers:

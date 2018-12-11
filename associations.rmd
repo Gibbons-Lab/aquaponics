@@ -27,7 +27,7 @@ vars <- c("no_leaves", "height", "root_length", "inoculate")
 tests <- list()
 for (s in subsets) {
     psub <- subset_samples(ps, environment == s[1] & sample_set == s[2])
-    res <- association(psub, vars, min_count = 100, in_samples=0.05)
+    res <- association(psub, vars, min_count = 10, in_samples=0.1)
     res[, "site" := s[1]]
     tests[[s[1]]] <- res
 }
@@ -38,13 +38,13 @@ tests <- rbindlist(tests)
 Now let's readjust the p values and check the histogram.
 
 ```{r}
-ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20, alpha=0.5) + geom_histogram(aes(x=padj), bins=20, fill="blue", alpha=0.5)
+ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + facet_wrap(~ site)
 ```
 
 Let's visuzlize the effect sizes and significant tests.
 
-```{r, fig.width=10, fig.height=8}
-lfc_plot <- ggplot(tests[padj < 0.05],
+```{r, fig.width=8, fig.height=4}
+lfc_plot <- ggplot(tests[padj < 0.1],
                    aes(x=log2FoldChange, y=reorder(genus, -log2FoldChange),
                        color=baseMean)) +
         geom_vline(xintercept=0, lty="dashed", color="black") +
@@ -64,7 +64,7 @@ As we can see there are very little hits in fish feces but some in the roots and
 ```{r, fig.width=9, fig.height=9}
 bioballs <- tests[site == "bioball"]
 psub <- subset_samples(ps, environment == "bioball" & sample_set == "T2")
-sigs <- bioballs[padj < 0.05 & variable == "inoculate", unique(genus)]
+sigs <- bioballs[padj < 0.1 & variable == "inoculate", unique(genus)]
 data <- plot_counts(psub, "inoculate", taxa=sigs, only_data=T)
 inoc_plot <- ggplot(data, aes(x=value, y=reads + 0.5, col=value)) +
     geom_jitter(width=0.25) + scale_y_log10() +
@@ -80,7 +80,7 @@ print(inoc_plot)
 Plant height:
 
 ```{r, fig.height=9, fig.width=9}
-sigs <- bioballs[padj < 0.05 & variable == "height", unique(genus)]
+sigs <- bioballs[padj < 0.1 & variable == "height", unique(genus)]
 plot_counts(psub, variable="height", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/heights_bioball.pdf", width=9, height=9)
@@ -89,7 +89,7 @@ ggsave("figures/heights_bioball.pdf", width=9, height=9)
 Number of leaves:
 
 ```{r, fig.height=9, fig.width=9}
-sigs <- bioballs[padj < 0.05 & variable == "no_leaves", unique(genus)]
+sigs <- bioballs[padj < 0.1 & variable == "no_leaves", unique(genus)]
 plot_counts(psub, variable="no_leaves", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/leaves_bioball.pdf", width=9, height=9)
@@ -98,7 +98,7 @@ ggsave("figures/leaves_bioball.pdf", width=9, height=9)
 Root length:
 
 ```{r, fig.height=6, fig.width=6}
-sigs <- bioballs[padj < 0.05 & variable == "root_length", unique(genus)]
+sigs <- bioballs[padj < 0.1 & variable == "root_length", unique(genus)]
 plot_counts(psub, variable="root_length", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()
 ggsave("figures/root_length_bioball.pdf", width=9, height=9)
@@ -106,10 +106,10 @@ ggsave("figures/root_length_bioball.pdf", width=9, height=9)
 
 ## Roots
 
-```{r, fig.width=4, fig.height=5}
+```{r, fig.width=8, fig.height=8}
 roots <- tests[site == "root"]
 psub <- subset_samples(ps, environment == "root" & sample_set == "T2")
-sigs <- roots[padj < 0.2 & variable == "inoculate", unique(genus)]
+sigs <- roots[padj < 0.1 & variable == "inoculate", unique(genus)]
 data <- plot_counts(psub, "inoculate", taxa=sigs, only_data=T)
 inoc_plot %+% data
 ggsave("figures/inoculation_root.pdf", width=4, height=5)
@@ -119,7 +119,7 @@ ggsave("figures/inoculation_root.pdf", width=4, height=5)
 
 Plant height:
 
-```{r, fig.height=4, fig.width=5}
+```{r, fig.height=8, fig.width=8}
 sigs <- roots[padj < 0.1 & variable == "height", unique(genus)]
 plot_counts(psub, variable="height", taxa=sigs) +
     geom_smooth(method="glm") + theme_bw()

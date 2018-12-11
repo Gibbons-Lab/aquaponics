@@ -17,8 +17,6 @@ plants[tank %in% 1:3, inoculum := "commercial"]
 ## Time courses
 
 ```{r}
-dna_dates <- as.Date(c("2017-07-12", "2017-08-19", "2017-08-27"))
-
 sampled <- plants[sample != "Growth Bed"]
 sampled[, date := as.Date(date)]
 summaries <- sampled[, .(num_leaves=mean(no_leaves, na.rm=T), num_leaves_sd=sd(no_leaves, na.rm=T),
@@ -29,7 +27,6 @@ Plant height
 
 ```{r}
 ggplot(summaries[!is.na(height)], aes(x=date, y=height, col=factor(tank), group=factor(tank))) + 
-  geom_vline(xintercept=dna_dates[1], col="grey") +
   geom_ribbon(aes(ymin=height-height_sd, ymax=height+height_sd, fill=factor(tank)), alpha=0.25, col=NA)  + 
   geom_line(size=1) + theme_bw() + labs(y="plant height [cm]", color="tank", fill="tank")
 ggsave("figures/plant_height_sds.pdf")
@@ -47,9 +44,8 @@ ggsave("figures/num_leaves_sds.pdf")
 Height Growth bed
 
 ```{r}
-ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], aes(x=date, y=height_avg, col=factor(tank))) + 
-  geom_vline(xintercept=dna_dates, color="grey50", lty="dashed") +
-  geom_point() + geom_line(aes(group=factor(tank))) + theme_bw() + 
+ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], aes(x=date, y=height_avg, col=inoculum)) + 
+  geom_point() + stat_summary(aes(group=inoculum), fun.y=mean, geom="line") + theme_bw() + 
   labs(y="average height [cm]", color="tank")
 ggsave("figures/plant_height_avg.pdf")
 ```
@@ -58,7 +54,6 @@ Num. Leaves growth bed
 
 ```{r}
 ggplot(plants[sample == "Growth Bed" & !is.na(no_leaves_avg)], aes(x=date, y=no_leaves_avg, col=factor(tank))) + 
-  geom_vline(xintercept=dna_dates, color="grey50", lty="dashed") +
   geom_point() + geom_line(aes(group=factor(tank))) + theme_bw() +
   labs(y="average num. leaves", color="tank")
 ggsave("figures/num_leaves_avg.pdf")
