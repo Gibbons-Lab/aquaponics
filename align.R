@@ -2,16 +2,22 @@
 
 library(mbtools)
 library(stringr)
+library(futile.logger)
 
 pattern <- "(\\w+).fastq.gz"
 annotation <- c("id")
+
+flog.appender(appender.file("align.log"))
 
 config <- list(
     preprocess = config_preprocess(
         trimLeft = 0,
         truncLen = 1500,
         maxEE = 200,
-        out_dir = "data/filtered"
+        out_dir = "data/filtered",
+        threads = 20,
+        truncQ = 1,
+        maxN = 2
     ),
     align = config_align_long(
         reference = "silva_dna_132.fa.gz",
