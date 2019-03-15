@@ -7,8 +7,13 @@ We will start by loading the data set:
 
 ```{r}
 library(mbtools)
+library(ggplot2)
+theme_set(theme_classic())
 
 ps <- readRDS("data/taxonomy.rds")
+sdata <- read.csv("barcodes.csv")
+rownames(sdata) <- sdata$isb_id
+sample_data(ps) <- sdata
 ps
 ```
 
@@ -21,9 +26,10 @@ plot_taxa(ps, level = "phylum")
 ## Ordination
 
 ```{r, fig.width=6, fig.height=4}
-ord <- ordinate(rarefy_even_depth(ps), method="PCoA")
-plot_ordination(ps, ord, color="environment", shape="inoculate", label="isb_id") + theme_bw()
-ggsave("figures/pcoa.pdf")
+ord <- ordinate(rarefy_even_depth(ps, 3000), method="PCoA")
+plot_ordination(ps, ord, color="environment", shape="inoculum", label="isb_id") + 
+  stat_ellipse(aes(group = environment), type = "t") +
+ggsave("figures/pcoa.svg", width = 6, height = 4)
 ```
 
 ### Dynamics
@@ -31,9 +37,9 @@ ggsave("figures/pcoa.pdf")
 ```{r}
 bioballs <- subset_samples(ps, environment == "bioball" | isb_id %in% c("T0B", "T0Comm"))
 ord <- ordinate(rarefy_even_depth(bioballs), method="PCoA")
-df <- plot_ordination(bioballs, ord, color="inoculate", justDF = TRUE)
+df <- plot_ordination(bioballs, ord, color="inoculum", justDF = TRUE)
 
-ggplot(df, aes(x=Axis.1, y=Axis.2, color=inoculate)) + geom_point(size=3, alpha=0.5) + 
+ggplot(df, aes(x=Axis.1, y=Axis.2, color=inoculum)) + geom_point(size=3, alpha=0.5) + 
   geom_line(aes(group=tank), data=function(x) dplyr::filter(x, environment == "bioball"), 
             arrow=arrow(ends = "first", type = "closed", length = unit(0.2, "cm"))) + 
   geom_text(aes(label=isb_id), nudge_y=-0.02, size=3) +
@@ -43,27 +49,35 @@ ggsave("figures/dynamics.pdf")
 ## Richness
 
 ```{r, fig.width=6, fig.height=4}
-richness <- cbind(estimate_richness(rarefy_even_depth(ps))[sample_names(ps), ], sample_data(ps))
+alpha <- cbind(
+  estimate_richness(rarefy_even_depth(ps, 3000))[sample_names(ps), ], 
+  sample_data(ps))
 
-pl <- ggplot(richness, aes(x=sample_set, y=Shannon, shape=inoculate, color=environment, group=inoculate)) +        
-        geom_point(position=position_dodge(width=0.5)) + theme_bw() + labs(x="time point", y="shannon diversity")
-ggsave("figures/diversity.pdf", width=6, height=4)
-pl
+ggplot(alpha, aes(x = sample_set, y = Shannon, shape = inoculum, 
+                        color = environment, group = inoculum)) +        
+        geom_point(position = position_dodge(width=0.5)) + 
+  labs(x = "time point", y = "shannon diversity")
+ggsave("figures/diversity.svg", width = 6, height = 3)
 ```
 
 ## Heatmaps
 
-```{r, fig.height=8, fig.width=14}
+```{r, fig.height=12, fig.width=9}
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps)) %>% filter_counts(presence = 0.1)
-pheatmap(log10(t(counts) + 1), width = 8, height = 20, filename = "figures/heatmap.pdf")
-pheatmap(log10(counts + 1))
+labels <- sdata[, c("environment", "sample_set")]
+names(labels)[2] <- "time point"
+
+cols <- viridis::viridis(128) 
+pheatmap(log10(t(counts) + 1), color = cols, annotation_col = labels,
+         width = 9, height = 12, filename = "figures/heatmap.pdf")
+pheatmap(log10(t(counts) + 1), color = cols, annotation_col = labels)
 ```
 
 Heatmap for Nitrifiers:
 
-```{r, fig.height=3, fig.width=8}
+```{r, fig.height=2.1, fig.width=8}
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps)[grepl("Nitro", taxa)])

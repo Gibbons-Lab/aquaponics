@@ -8,6 +8,7 @@ output: html_notebook
 ```{r}
 library(data.table)
 library(ggplot2)
+theme_set(theme_classic())
 
 greenhouse <- fread("data/greenhouse.csv")
 greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
