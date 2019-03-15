@@ -7,7 +7,7 @@ library(futile.logger)
 pattern <- "(\\w+).fastq.gz"
 annotation <- c("id")
 
-flog.appender(appender.file("align.log"))
+flog.appender(appender.tee("align.log"))
 
 config <- list(
     preprocess = config_preprocess(
@@ -16,7 +16,7 @@ config <- list(
         maxEE = 200,
         out_dir = "data/filtered",
         threads = 20,
-        truncQ = 1,
+        truncQ = 0,
         maxN = 2
     ),
     align = config_align_long(
