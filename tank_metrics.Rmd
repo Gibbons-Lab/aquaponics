@@ -12,25 +12,26 @@ theme_set(theme_classic())
 
 greenhouse <- fread("data/greenhouse.csv")
 greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
+greenhouse[, time := difftime(date, date[1], units = "days")]
 greenhouse[, inoculum := "aquaponics system"]
 greenhouse[tank %in% 1:3, inoculum := "commercial"]
 greenhouse[, tank := factor(tank)]
-greenhouse <- greenhouse[order(date, tank)]
-indicators <- greenhouse[, .(date, tank, inoculum, chlorine, alkalinity, pH, `conductivity (uS/cm)`, 
+greenhouse <- greenhouse[order(time, tank)]
+indicators <- greenhouse[, .(time, tank, inoculum, chlorine, alkalinity, pH, `conductivity (uS/cm)`, 
                              hardness, `total fish food`, `water added (L)`, greenhouse_temp, 
                              greenhouse_humidity)]
-indicators <- melt(indicators, id.vars=c("date", "tank", "inoculum"), variable.name="measure")
+indicators <- melt(indicators, id.vars=c("time", "tank", "inoculum"), variable.name="measure")
 indicators[, value := as.numeric(value)]
 
-sampling_dates <- as.Date(c("2017-06-28", "2017-07-19", "2017-08-28"))
+sampling_dates <- difftime(as.Date(c("2017-06-28", "2017-07-19", "2017-08-28")),
+                           greenhouse$date[1], units = "days")
 ```
 
 Plot indicators across time
 
 ```{r, fig.width=8, fig.height=6}
-ggplot(indicators[!is.na(value)], aes(x=date, y=value, color=tank, group=tank)) + 
-  geom_point() + geom_line() + facet_wrap(~ measure, scales = "free_y") +
-  theme_bw()
+ggplot(indicators[!is.na(value)], aes(x=time, y=value, color=tank, group=tank)) + 
+  geom_point() + geom_line() + facet_wrap(~ measure, scales = "free_y")
 ggsave("figures/indicators_time.pdf", width=8, height=6)
 ```
 
@@ -40,51 +41,39 @@ As boxplots
 ```{r, fig.width=6, fig.height=5}
 ggplot(indicators, aes(x=tank, y=value, color=tank)) + 
   geom_boxplot() + facet_wrap(~ measure, scales="free_y") + 
-  guides(color=FALSE) + theme_bw()
+  guides(color=FALSE)
 ggsave("figures/indicators.pdf", width=6, height=5)
 ```
 
 ```{r}
-nitrogen <- melt(greenhouse[, .(date, tank, inoculum, nitrate, nitrite, ammonia)],
-                 id.vars=c("date", "tank", "inoculum"), variable.name="measure")
+nitrogen <- melt(greenhouse[, .(time, tank, inoculum, nitrate, nitrite, ammonia)],
+                 id.vars=c("time", "tank", "inoculum"), variable.name="measure")
 nitrogen[, value := as.numeric(value)]
 ```
 
-```{r, fig.width=13, fig.height=6}
+```{r, fig.width=8, fig.height=3}
 nitrogen[, measure := factor(measure, levels=c("ammonia", "nitrite", "nitrate"))]
-ggplot(nitrogen, aes(x=date, y=value, color=measure, group=measure)) + 
-  geom_point() + geom_line() + facet_grid(measure ~ tank, scales="free_y") +
-  geom_vline(xintercept=sampling_dates, lty="dashed") +
-  theme_bw()
-ggsave("figures/nitrogen_time.pdf", width=10, height=4)
-```
-
-```{r, fig.width=10, fig.height=4}
-ggplot(nitrogen, aes(x=tank, y=value, color=inoculum)) + 
-  geom_jitter() + facet_wrap(~ measure, scale="free_y") + theme_bw()
-ggsave("figures/nitrogen_pooled.pdf", width=10, height=4)
+ggplot(nitrogen, aes(x=time, y=value, color=measure)) + 
+  geom_point() + stat_smooth(aes(fill = measure)) + facet_wrap(~ measure, scales="free_y") +
+  geom_vline(xintercept=sampling_dates, lty="dashed") + theme_minimal() +
+  guides(color = FALSE, fill = FALSE) + 
+    labs(x = "time [days]", y = "concentration [ppm]")
+ggsave("figures/nitrogen_time.svg", width = 8, height = 3)
 ```
 
 Relationship with plant growth:
 
-```{r}
-plants <- fread("data/plant_data_clean.csv")
-plants[, date := as.Date(date)]
-plants[, inoculum := "aquaponics system"]
-plants[tank %in% 1:3, inoculum := "commercial"]
-plants[, tank := factor(tank)]
-
-merged <- nitrogen[plants[sample == "Growth Bed" & !is.na(height_avg)], on=c("tank", "date")]
-ggplot(merged, aes(x=height_avg, y=value)) + geom_point() + facet_wrap(~ measure)
-```
+We will plot the area under the curve vs the plant measure.
 
 ```{r}
+library(phyloseq)
+
 trapz <- function(x, y) {
   y[is.na(y)] <- 0
   sum((y[2:length(y)] + y[1:(length(y) - 1)]) * as.numeric(diff(x))) * 0.5
 }
 
-aucs <- nitrogen[, .(auc = trapz(date, value), inoculum = inoculum[1]), by=c("measure", "tank")]
+aucs <- nitrogen[, .(auc = trapz(time, value), inoculum = inoculum[1]), by=c("measure", "tank")]
 plants <- as(sample_data(readRDS("data/taxonomy.rds")), "data.frame")
 setDT(plants)
 plants[, tank := factor(tank)]
@@ -95,6 +84,6 @@ plants <- melt(plants[sample_set == "T2" & environment == "bioball"],
 aucs <- aucs[plants, on="tank", allow.cartesian = T]
 
 ggplot(aucs, aes(x=value, y=auc, color=inoculum)) + geom_point() + 
-  facet_grid(measure ~ plant_measure, scales="free") + theme_bw()
+  facet_grid(measure ~ plant_measure, scales="free") + theme_light()
 ggsave("data/aucs_nitrogen.pdf")
 ```

@@ -7,9 +7,12 @@ Those are just some visualizations for plant growth across the tanks.
 
 ```{r}
 library(data.table)
+library(ggplot2)
+theme_set(theme_classic())
 
 plants <- fread("data/plant_data_clean.csv")
 plants[, date := as.Date(date)]
+plants[, time := difftime(date, date[1], units = "days")]
 plants[, inoculum := "established"]
 plants[tank %in% 1:3, inoculum := "commercial"]
 ```
@@ -25,20 +28,33 @@ Height Growth bed
 
 ```{r}
 ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], 
-       aes(x = date, y = height_avg, col = inoculum)) + 
+       aes(x = time, y = height_avg, col = inoculum)) + 
   geom_point() + stat_summary(aes(group = tank), fun.y = mean, geom = "line") + 
-  labs(y="average height [cm]", color="tank")
+  labs(x = "time [days]", y = "average plant height [cm]", color = "tank")
 ggsave("figures/plant_height_avg.svg")
 ```
 
 
-Root length growth bed
+Pooled measures
 
 ```{r, fig.width=6, fig.height=4}
+bed <- melt(plants[sample == "Growth Bed"],
+            id.vars = c("tank", "time", "inoculum"),
+            measure.vars = c("no_leaves_avg", "root_length_avg", 
+                             "height_avg"))
+bed[, value := as.numeric(value)]
+bed <- bed[!is.na(value)]
+
+labels <- c(
+    no_leaves_avg = "no. of leaves",
+    height_avg = "plant height [cm]",
+    root_length_avg = "root length [cm]"
+)
+
 ggplot(bed, aes(x = inoculum, y = value, col = inoculum)) +
   geom_boxplot(width = 0.6) + geom_jitter(width=0.2) +
-  facet_wrap(~ variable, scales = "free_y") +
-  labs(y="", x="", color="") + guides(color=FALSE) +
+  facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(labels)) +
+  labs(y="", x="", color="") + guides(color=FALSE) + theme_minimal()
 ggsave("figures/plant_metrics.svg")
 ```
 

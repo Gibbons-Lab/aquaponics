@@ -11,7 +11,7 @@ flog.appender(appender.tee("align.log"))
 
 config <- list(
     preprocess = config_preprocess(
-        trimLeft = 0,
+        trimLeft = 10,
         truncLen = 1500,
         maxEE = 200,
         out_dir = "data/filtered",
@@ -31,7 +31,7 @@ config <- list(
 
 files <- find_read_files("data/raw", pattern = pattern, annotations = annotation)
 quals <- quality_control(files)
-ggsave("figures/qualities.png", plot = quals$quality_plot)
+ggsave("figures/qualities.png", plot = quals$quality_plot + xlim(0, 1800))
 
 if (!file.exists("data/workflow.rds")) {
     artifact <- quals %>% preprocess(config$preprocess) %>%
