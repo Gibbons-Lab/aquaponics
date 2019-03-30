@@ -37,7 +37,7 @@ ggsave("figures/plant_height_avg.svg")
 
 Pooled measures
 
-```{r, fig.width=6, fig.height=4}
+```{r, fig.width=8, fig.height=4}
 bed <- melt(plants[sample == "Growth Bed"],
             id.vars = c("tank", "time", "inoculum"),
             measure.vars = c("no_leaves_avg", "root_length_avg", 
@@ -55,7 +55,7 @@ ggplot(bed, aes(x = inoculum, y = value, col = inoculum)) +
   geom_boxplot(width = 0.6) + geom_jitter(width=0.2) +
   facet_wrap(~ variable, scales = "free_y", labeller = as_labeller(labels)) +
   labs(y="", x="", color="") + guides(color=FALSE) + theme_minimal()
-ggsave("figures/plant_metrics.svg")
+ggsave("figures/plant_metrics.svg", width = 8, height = 3)
 ```
 
 Corresponding tests:
