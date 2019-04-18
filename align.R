@@ -20,7 +20,7 @@ config <- list(
         maxN = 2
     ),
     align = config_align_long(
-        reference = "silva_dna_132.fa.gz",
+        reference = "silva_132_dna_nr99.fa.gz",
         threads = 20,
         alignment_dir = "data/alignments"
     ),
@@ -29,7 +29,8 @@ config <- list(
     )
 )
 
-files <- find_read_files("data/raw", pattern = pattern, annotations = annotation)
+files <- find_read_files("data/raw", pattern = pattern,
+                         annotations = annotation)
 quals <- quality_control(files)
 ggsave("figures/qualities.png", plot = quals$quality_plot + xlim(0, 1800))
 
@@ -45,12 +46,8 @@ if (!file.exists("data/workflow.rds")) {
 counts <- artifact$counts
 counts[, counts := round(counts)]
 counts <- counts[counts > 0]
-accs <- fread("zcat data/taxmap_132.txt.gz",
-              select=c("primaryAccession", "start", "stop", "taxid"))
-accs[, "seqnames" := paste0(primaryAccession, ".", start, ".", stop)]
-annotations <- fread("data/silva_taxonomy_132.csv")
-annotations <- annotations[accs, on = "taxid", allow.cartesian = TRUE]
-counts_ann <- annotations[counts, on = c(seqnames = "transcript")]
+annotations <- annotate_silva(config$align$reference)
+counts_ann <- annotations[counts, on = c(id = "transcript")]
 fwrite(counts_ann, "data/counts.csv")
 rm(annotations)
 

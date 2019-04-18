@@ -11,7 +11,7 @@ library(ggplot2)
 theme_set(theme_classic())
 
 ps <- readRDS("data/taxonomy.rds")
-sdata <- read.csv("barcodes.csv")
+sdata <- read.csv("data/barcodes.csv")
 rownames(sdata) <- sdata$isb_id
 sample_data(ps) <- sdata
 ps
