@@ -19,7 +19,7 @@ config <- list(
         truncQ = 0,
         maxN = 2
     ),
-    align = config_align_long(
+    align = config_align(
         reference = "silva_132_dna_nr99.fa.gz",
         threads = 20,
         alignment_dir = "data/alignments"
@@ -57,10 +57,9 @@ ids <- mat$transcript
 mat[, transcript := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- ids
-taxa <- dcast(unique(counts_ann[, .(seqnames, rank, name)]),
-              seqnames ~ rank,
-              value.var = "name", fill = NA)
-setkey(taxa, "seqnames")
+taxa <- counts_ann[, .(id, kingdom, phylum, class, order, 
+		       family, genus, species)][, .SD[1], by = id]
+setkey(taxa, "id")
 taxa <- as.matrix(taxa[rownames(mat)])
 rownames(taxa) <- taxa[, 1]
 samples <- read.csv("data/barcodes.csv")
