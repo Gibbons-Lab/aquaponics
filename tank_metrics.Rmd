@@ -58,7 +58,7 @@ ggplot(nitrogen, aes(x=time, y=value, color=measure)) +
   geom_vline(xintercept=sampling_dates, lty="dashed") + theme_minimal() +
   guides(color = FALSE, fill = FALSE) +
     labs(x = "time [days]", y = "concentration [ppm]")
-ggsave("figures/nitrogen_time.png", width = 8, height = 2.5, dpi = 300)
+ggsave("figures/nitrogen_time.png", width = 8, height = 4, dpi = 300)
 ```
 
 Relationship with plant growth:

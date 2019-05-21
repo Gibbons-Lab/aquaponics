@@ -1,4 +1,4 @@
-site,flow_cell,sample_set,sample_no,barcode,group,isb_id,environment,tank,inoculum
+site,flow_cell,sample_set,sample_no,barcode,group,isb_id,compartment,tank,inoculum
 ISB Aquaponics samples,FAF19229,T0,1,1,ISB_1_12,T0B,biofilter,NA,established
 ISB Aquaponics samples,FAF19229,T0,2,2,ISB_1_12,T0Comm,inoculum,NA,commercial
 ISB Aquaponics samples,FAF19229,T0,3,3,ISB_1_12,T0F1,fish feces,1,commercial
@@ -7,7 +7,7 @@ ISB Aquaponics samples,FAF19229,T0,5,5,ISB_1_12,T0F3,fish feces,3,commercial
 ISB Aquaponics samples,FAF19229,T0,6,6,ISB_1_12,T0F4,fish feces,4,established
 ISB Aquaponics samples,FAF19229,T0,7,7,ISB_1_12,T0F5,fish feces,5,established
 ISB Aquaponics samples,FAF19229,T0,8,8,ISB_1_12,T0F6,fish feces,6,established
-ISB Aquaponics samples,FAF19229,T0,9,9,ISB_1_12,T0RW,root,NA,plants
+ISB Aquaponics samples,FAF19229,T0,9,9,ISB_1_12,T0RW,root,NA,starter cubes
 ISB Aquaponics samples,FAF19229,T1,10,10,ISB_1_12,T1B1,biofilter,1,commercial
 ISB Aquaponics samples,FAF19229,T1,11,11,ISB_1_12,T1B2,biofilter,2,commercial
 ISB Aquaponics samples,FAF19229,T1,12,12,ISB_1_12,T1B3,biofilter,3,commercial

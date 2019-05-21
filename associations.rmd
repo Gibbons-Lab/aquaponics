@@ -13,23 +13,25 @@ library(mbtools)
 theme_set(theme_classic())
 
 ps <- readRDS("data/taxonomy.rds")
+otu_table(ps)[otu_table(ps) < 1] <- 0
 sdata <- fread("data/plant_data_clean.csv")
 sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N], 
                                                       height=height_avg[.N], 
                                                       root_length=root_length_avg[.N]), 
                                                    by=tank]
-old <- fread("barcodes.csv")
-old[inoculum == "plants", inoculum := NA]
+old <- fread("data/barcodes.csv")
 old[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
-sdata <- as.data.frame(sdata[old, on="tank"])
+sdata <- as.data.frame(sdata[old, on = "tank"])
+sdata$isb_id[sdata$isb_id == "T0RW"] <- "T0R"
 rownames(sdata) <- old$isb_id
 sample_data(ps) <- sdata
+sample_names(ps)[sample_names(ps) == "T0RW"] <- "T0R"
 
-subsets <- list(c("bioball", "T2"), c("fish feces", "T0"), c("root", "T2"))
+subsets <- list(c("biofilter", "T2"), c("fish feces", "T0"), c("root", "T2"))
 vars <- c("no_leaves", "height", "root_length", "inoculum")
 tests <- list()
 for (s in subsets) {
-    psub <- subset_samples(ps, environment == s[1] & sample_set == s[2])
+    psub <- subset_samples(ps, compartment == s[1] & sample_set == s[2])
     res <- association(psub, vars, min_count = 10, in_samples=0.1)
     res[, "site" := s[1]]
     tests[[s[1]]] <- res
@@ -45,10 +47,18 @@ Now let's readjust the p values and check the histogram.
 ggplot(tests, aes(x=pvalue)) + geom_histogram(bins=20) + facet_wrap(~ site)
 ```
 
+We will also track a list of genera with abundances larger than our cutoff in at least 2 samples:
+
+```{r}
+counts <- taxa_count(ps, lev = "Genus") %>% as.matrix()
+genera <- colnames(counts)[apply(counts, 2, function(x) sum(x > 300)) > 1]
+genera <- genera[genera != "uncultured"]
+```
+
 Let's visuzlize the effect sizes and significant tests.
 
-```{r, fig.width=8, fig.height=4}
-ggplot(tests[padj < 0.05],
+```{r, fig.width=9, fig.height=3}
+ggplot(tests[padj < 0.05 & genus %chin% genera],
        aes(x = log2FoldChange, y = reorder(genus, -log2FoldChange),
            color = baseMean)) +
     geom_vline(xintercept = 0, lty = "dashed", color = "black") +
@@ -58,68 +68,9 @@ ggplot(tests[padj < 0.05],
     facet_grid(site ~ variable, scales = "free_y", space = "free_y") + 
     scale_color_gradient(trans="log10") +
     labs(x="log fold change", y="", color="abundance") + theme_minimal()
-ggsave(sprintf("figures/lfcs.svg"), width = 8, height = 4)
+ggsave(sprintf("figures/lfcs.svg"), width = 9, height = 3)
 ```
 
-As we can see there are very little hits in fish feces but some in the roots and many in the bioballs. Let's investigate the bioballs and roots a bit further.
-
-## Bioballs
-
-```{r, fig.width=9, fig.height=9}
-bioballs <- tests[site == "bioball"]
-psub <- subset_samples(ps, environment == "bioball" & sample_set == "T2")
-sigs <- bioballs[padj < 0.1 & variable == "inoculum", unique(genus)]
-data <- plot_counts(psub, "inoculum", taxa=sigs, only_data=T)
-inoc_plot <- ggplot(data, aes(x=value, y=reads + 0.5, col=value)) +
-    geom_jitter(width=0.25) + scale_y_log10() +
-    facet_wrap(~ taxa) +
-    labs(x="", y="normalized counts") + guides(color=F) +
-    theme(axis.text.x=element_text(angle=90, hjust=1, vjust=0.5))
-ggsave("figures/inoculation_bioball.svg", width=9, height=9)
-print(inoc_plot)
-```
-
-
-## Roots
-
-```{r, fig.width=6, fig.height=6}
-roots <- tests[site == "root"]
-psub <- subset_samples(ps, environment == "root" & sample_set == "T2")
-sigs <- roots[padj < 0.1 & variable == "inoculum", unique(genus)]
-data <- plot_counts(psub, "inoculum", taxa=sigs, only_data=T)
-inoc_plot %+% data
-ggsave("figures/inoculation_root.pdf", width=4, height=5)
-```
-
-### Plant Data
-
-Plant height:
-
-```{r, fig.height=6, fig.width=6}
-sigs <- roots[padj < 0.1 & variable == "height", unique(genus)]
-plot_counts(psub, variable="height", taxa=sigs) +
-    geom_smooth(method="glm")
-ggsave("figures/heights_root.pdf", width=5, height=4)
-```
-
-Number of leaves:
-
-```{r, fig.height=5, fig.width=5}
-sigs <- roots[padj < 0.1 & variable == "no_leaves", unique(genus)]
-plot_counts(psub, variable="no_leaves", taxa=sigs) +
-    geom_smooth(method="glm")
-ggsave("figures/leaves_root.pdf", width=5, height=4)
-```
-
-
-Root length:
-
-```{r, fig.height=3, fig.width=5}
-sigs <- roots[padj < 0.1 & variable == "root_length", unique(genus)]
-plot_counts(psub, variable="root_length", taxa=sigs) +
-    geom_smooth(method="glm")
-ggsave("figures/root_length_root.pdf", width=5, height=4)
-```
 
 ## Temporal development
 
@@ -127,14 +78,14 @@ Let's have a look for the genera that are specifically targeting the root.
 For that we wil first assemble the corresponding data set:
 
 ```{r}
-counts <- taxa_count(ps)
+counts <- taxa_count(ps, zeros = TRUE)
 sdata <- as.data.table(sdata)
 counts <- counts[sdata, on = c(sample = "isb_id")]
 counts[, relative := reads / sum(reads), by = "sample"]
 
-genera <- tests[padj < 0.05 & site == "root", unique(genus)]
-genera <- c(genera, "Azospirillum")
-counts <- counts[taxa %in% genera & environment %in% c("bioball", "root")]
+genera <- tests[padj < 0.05 & genus %chin% genera, unique(genus)]
+counts <- counts[taxa %in% genera & compartment %in% c("biofilter", "root")]
+map <- rep(c("commercial", "established"), each = 3)
 initial <- counts[is.na(tank)]
 initial <- lapply(1:6, function(i) {
   co <- copy(initial) 
@@ -149,10 +100,11 @@ counts[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
 
 Now we can visualize the temporal changes:
 
-```{r, fig.width = 9, fig.height = 4}
+```{r, fig.width = 12, fig.height = 4}
+counts[, inoculum := factor(inoculum, levels = c("commercial", "established"))]
 ggplot(counts, aes(x = sample_set, y = relative, col = inoculum, group = interaction(tank, inoculum))) +
   geom_point() + geom_line() +
-  facet_grid(environment ~ taxa, scales = "free_y") +
+  facet_grid(compartment ~ taxa, scales = "free_y") +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "time point", y = "relative abundance") + theme_minimal()
 ggsave("figures/pathogens_time.svg", width = 9, height = 4)
