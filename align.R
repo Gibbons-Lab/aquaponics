@@ -25,7 +25,8 @@ config <- list(
         alignment_dir = "data/alignments"
     ),
     count = config_count(
-        threads = 20
+        threads = 20,
+        weights = TRUE
     )
 )
 
@@ -37,7 +38,7 @@ ggsave("figures/qualities.png", plot = quals$quality_plot + xlim(0, 1800))
 if (!file.exists("data/workflow.rds")) {
     artifact <- quals %>% preprocess(config$preprocess) %>%
                           align_long_reads(config$align) %>%
-                          count_transcripts(config$count)
+                          count_references(config$count)
     saveRDS(artifact, "data/workflow.rds")
 } else {
     artifact <- readRDS("data/workflow.rds")
@@ -47,14 +48,14 @@ counts <- artifact$counts
 counts[, counts := round(counts)]
 counts <- counts[counts > 0]
 annotations <- annotate_silva(config$align$reference)
-counts_ann <- annotations[counts, on = c(id = "transcript")]
+counts_ann <- annotations[counts, on = c(id = "reference")]
 fwrite(counts_ann, "data/counts.csv")
 rm(annotations)
 
 # Build the fully annotated phyloseq object
-mat <- dcast(counts, transcript ~ sample, value.var = "counts", fill = 0)
-ids <- mat$transcript
-mat[, transcript := NULL]
+mat <- dcast(counts, reference ~ sample, value.var = "counts", fill = 0)
+ids <- mat$reference
+mat[, reference := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- ids
 taxa <- counts_ann[, .(id, kingdom, phylum, class, order, 
