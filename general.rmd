@@ -21,17 +21,30 @@ ps
 
 Taxa plots
 
-```{r}
-plot_taxa(ps, level = "phylum")
+```{r, fig.width = 8, fig.height = 4}
+phyla <- plot_taxa(ps, level = "phylum", only_data = TRUE)
+phyla <- as.data.table(sdata)[phyla, on = c(isb_id = "sample")]
+ggplot(phyla, aes(x = isb_id, y = reads, fill = taxa)) + 
+  geom_bar(stat = "identity", position = "stack", size = 0.1, color = "white") +
+  facet_wrap(~ inoculum, scales = "free_x") + 
+  scale_y_continuous(expand = c(0, 0.01), labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired", direction = -1) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  labs(x = "", y = "relative abundance", fill = "")
+ggsave("figures/phyla.png", width = 8, height = 4, dpi = 300)
 ```
 
 ## Ordination
 
-```{r, fig.width=6, fig.height=4}
+```{r, fig.width=5, fig.height=3.5}
+inoc_cols <- c(scales::hue_pal()(2), "gray")
+
 ord <- ordinate(rarefy_even_depth(ps, 3000), method="PCoA")
-plot_ordination(ps, ord, color="compartment", shape="inoculum", label="isb_id") + 
-  stat_ellipse(aes(group = compartment), type = "t") +
-ggsave("figures/pcoa.svg", width = 6, height = 4)
+plot_ordination(ps, ord, shape="compartment", color="inoculum") + 
+  stat_ellipse(aes(group = compartment, lty = compartment), type = "t") +
+  scale_color_manual(values = inoc_cols) +
+  guides(lty = FALSE)
+ggsave("figures/pcoa.svg", width = 5, height = 3.5)
 ```
 
 And the corresponding PERMANOVA:
@@ -60,46 +73,65 @@ ggsave("figures/dynamics.pdf")
 ```
 ## Richness
 
-```{r, fig.width=6, fig.height=4}
+```{r, fig.width=5, fig.height=3.5}
 alpha <- cbind(
   estimate_richness(rarefy_even_depth(ps, 3000))[sample_names(ps), ], 
   sample_data(ps))
 
-ggplot(alpha, aes(x = sample_set, y = Chao1, shape = inoculum, 
-                        color = compartment, group = inoculum)) +        
+ggplot(alpha, aes(x = sample_set, y = Shannon, color = inoculum, 
+                        shape = compartment, group = inoculum)) +        
         geom_point(position = position_dodge(width=0.5)) +
-  labs(x = "time point", y = "Richness [Chao1 estimator]")
-ggsave("figures/diversity.svg", width = 6, height = 3)
+        scale_color_manual(values = inoc_cols) +
+  labs(x = "time point", y = "alpha diversity [Shannon index]")
+ggsave("figures/diversity.svg", width = 5, height = 3.5)
 ```
 
 Corresponding tests:
 
 ```{r}
 alpha <- as.data.table(alpha)
-alpha[compartment == "biofilter" & sample_set == "T1", t.test(Chao1 ~ inoculum)]
+alpha[compartment == "biofilter" & sample_set == "T1", t.test(Shannon ~ inoculum)]
+```
+
+and for T2:
+
+```{r}
+alpha[compartment == "biofilter" & sample_set == "T2", t.test(Shannon ~ inoculum)]
 ```
 
 ## Heatmaps
 
-```{r, fig.height=10, fig.width=8}
+```{r, fig.height=9, fig.width=8}
 library(pheatmap)
 
-counts <- as.matrix(taxa_count(ps)[reads >= 1]) %>% mbtools::normalize()
-counts <- counts[, apply(counts, 2, function(x) max(x) > 300)]
-counts <- counts[, !grepl("uncultured", colnames(counts))]
+counts <- as.matrix(taxa_count(ps))
+counts <- counts[, apply(counts, 2, function(x) sum(x > 300) > 1)]
+counts <- counts[, !grepl("uncultured|metagenome", colnames(counts))]
 labels <- sdata[, c("compartment", "sample_set", "inoculum")]
 names(labels)[2] <- "time point"
+label_cols <- list(
+  compartment = c(inoculum = "white", `fish feces` = "lightsteelblue",
+                  biofilter = "dodgerblue", root = "darkblue"),
+  `time point` = c(T0 = "white", T1 = "gray", T2 = "black"),
+  inoculum = c(CIT = inoc_cols[2], EIT = inoc_cols[1], 
+               `rock wool cubes` = inoc_cols[3])
+)
 
 cols <- viridis::viridis(128) 
 pheatmap(log10(t(counts) + 1), color = cols, annotation_col = labels,
-         width = 8, height = 8, filename = "figures/heatmap.pdf")
-pheatmap(log10(t(counts) + 1), color = cols, annotation_col = labels)
+         width = 8, height = 9, filename = "figures/heatmap.pdf",
+         annotation_colors = label_cols)
+pheatmap(log10(t(counts) + 1), color = cols, annotation_col = labels,
+         annotation_colors = label_cols)
 ```
 
 Most abundant:
 
 ```{r}
-sort(apply(counts, 2, sum), decreasing = TRUE)[1:10]
+counts <- taxa_count(ps, "Genus")[sdata, on = c(sample = "isb_id")]
+
+counts <- counts[, .(reads = mean(reads)), by = c("taxa", "compartment")]
+counts[order(-reads), .(taxa = taxa[1:5], reads = reads[1:5]), by = "compartment"]
 ```
 
 Heatmap for Nitrifiers:

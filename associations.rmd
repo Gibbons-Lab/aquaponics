@@ -20,7 +20,7 @@ sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N
                                                       root_length=root_length_avg[.N]), 
                                                    by=tank]
 old <- fread("data/barcodes.csv")
-old[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
+old[, inoculum := factor(inoculum, levels = c("EIT", "CIT"))]
 sdata <- as.data.frame(sdata[old, on = "tank"])
 sdata$isb_id[sdata$isb_id == "T0RW"] <- "T0R"
 rownames(sdata) <- old$isb_id
@@ -32,7 +32,7 @@ vars <- c("no_leaves", "height", "root_length", "inoculum")
 tests <- list()
 for (s in subsets) {
     psub <- subset_samples(ps, compartment == s[1] & sample_set == s[2])
-    res <- association(psub, vars, min_count = 10, in_samples=0.1)
+    res <- association(psub, variables=vars, min_count = 10, in_samples=0.1)
     res[, "site" := s[1]]
     tests[[s[1]]] <- res
 }
@@ -52,12 +52,12 @@ We will also track a list of genera with abundances larger than our cutoff in at
 ```{r}
 counts <- taxa_count(ps, lev = "Genus") %>% as.matrix()
 genera <- colnames(counts)[apply(counts, 2, function(x) sum(x > 300)) > 1]
-genera <- genera[genera != "uncultured"]
+genera <- genera[!grepl("uncultured|metagenome", genera)]
 ```
 
 Let's visuzlize the effect sizes and significant tests.
 
-```{r, fig.width=9, fig.height=3}
+```{r, fig.width=8, fig.height=3}
 ggplot(tests[padj < 0.05 & genus %chin% genera],
        aes(x = log2FoldChange, y = reorder(genus, -log2FoldChange),
            color = baseMean)) +
@@ -68,7 +68,7 @@ ggplot(tests[padj < 0.05 & genus %chin% genera],
     facet_grid(site ~ variable, scales = "free_y", space = "free_y") + 
     scale_color_gradient(trans="log10") +
     labs(x="log fold change", y="", color="abundance") + theme_minimal()
-ggsave(sprintf("figures/lfcs.svg"), width = 9, height = 3)
+ggsave(sprintf("figures/lfcs.svg"), width = 8, height = 3)
 ```
 
 
@@ -83,29 +83,29 @@ sdata <- as.data.table(sdata)
 counts <- counts[sdata, on = c(sample = "isb_id")]
 counts[, relative := reads / sum(reads), by = "sample"]
 
-genera <- tests[padj < 0.05 & genus %chin% genera, unique(genus)]
-counts <- counts[taxa %in% genera & compartment %in% c("biofilter", "root")]
-map <- rep(c("commercial", "established"), each = 3)
+genera <- c("Pseudomonas", "Aeromonas", "Serratia", "Rahnella")
+counts <- counts[taxa %in% genera & compartment %in% c("biofilter", "root", "inoculum")]
+map <- rep(c("CIT", "EIT"), each = 3)
 initial <- counts[is.na(tank)]
 initial <- lapply(1:6, function(i) {
   co <- copy(initial) 
   co$tank <- i
-  co$inoculum <- map[i]
+  co$inoculum[is.na(co$inoculum)] <- map[i]
+  co$compartment[co$compartment == "inoculum"] <- "biofilter"
   return(co)
 })
 initial[[7]] <- counts[!is.na(tank)]
 counts <- rbindlist(initial)
-counts[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
+counts[, inoculum := factor(inoculum, levels = c("CIT", "EIT"))]
 ```
 
 Now we can visualize the temporal changes:
 
-```{r, fig.width = 12, fig.height = 4}
-counts[, inoculum := factor(inoculum, levels = c("commercial", "established"))]
+```{r, fig.width = 8, fig.height = 3}
 ggplot(counts, aes(x = sample_set, y = relative, col = inoculum, group = interaction(tank, inoculum))) +
   geom_point() + geom_line() +
   facet_grid(compartment ~ taxa, scales = "free_y") +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "time point", y = "relative abundance") + theme_minimal()
-ggsave("figures/pathogens_time.svg", width = 9, height = 4)
+ggsave("figures/pathogens_time.svg", width = 8, height = 3)
 ```

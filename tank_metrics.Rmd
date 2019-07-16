@@ -8,18 +8,26 @@ output: html_notebook
 ```{r}
 library(data.table)
 library(ggplot2)
-theme_set(theme_classic())
+theme_set(theme_minimal())
 
 greenhouse <- fread("data/greenhouse.csv")
 greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
 greenhouse[, time := difftime(date, date[1], units = "days")]
-greenhouse[, inoculum := "aquaponics system"]
-greenhouse[tank %in% 1:3, inoculum := "commercial"]
+greenhouse[, inoculum := "EIT"]
+greenhouse[tank %in% 1:3, inoculum := "CIT"]
 greenhouse[, tank := factor(tank)]
 greenhouse <- greenhouse[order(time, tank)]
-indicators <- greenhouse[, .(time, tank, inoculum, chlorine, alkalinity, pH, `conductivity (uS/cm)`, 
-                             hardness, `total fish food`, `water added (L)`, greenhouse_temp, 
-                             greenhouse_humidity)]
+indicators <- greenhouse[, .(time, tank, inoculum, 
+                             `chlorine (ppm)` = chlorine, 
+                             `alkalinity (ppm)` = alkalinity, pH, 
+                             `conductivity (uS/cm)`, 
+                             `hardness (ppm)` = hardness, 
+                             `total fish food (#pellets)` = `total fish food`, 
+                             `water added (L)`, 
+                             `water temperature (ºC)` = `water temperature`, 
+                             `greenhouse humidity (%)` = greenhouse_humidity)]
+# Remove impossible humidity values
+indicators[`greenhouse humidity (%)` > 100, `greenhouse humidity (%)` := NA]
 indicators <- melt(indicators, id.vars=c("time", "tank", "inoculum"), variable.name="measure")
 indicators[, value := as.numeric(value)]
 
@@ -30,18 +38,19 @@ sampling_dates <- difftime(as.Date(c("2017-06-28", "2017-07-19", "2017-08-28")),
 Plot indicators across time
 
 ```{r, fig.width=8, fig.height=6}
-ggplot(indicators[!is.na(value)], aes(x=time, y=value, color=tank, group=tank)) + 
-  geom_point() + geom_line() + facet_wrap(~ measure, scales = "free_y")
-ggsave("figures/indicators_time.pdf", width=8, height=6)
+ggplot(indicators[!is.na(value)], aes(x=time, y=value, color=inoculum, fill = inoculum, group=inoculum)) + 
+  geom_point(alpha=0.5) + stat_smooth() + facet_wrap(~ measure, scales = "free_y") +
+  labs(x = "time [days]")
+ggsave("figures/indicators_time.png", width=8, height=6, dpi=300)
 ```
 
 
 As boxplots
 
 ```{r, fig.width=6, fig.height=5}
-ggplot(indicators, aes(x=tank, y=value, color=tank)) + 
+ggplot(indicators, aes(x=tank, y=value, color=inoculum)) + 
   geom_boxplot() + facet_wrap(~ measure, scales="free_y") + 
-  guides(color=FALSE) + theme_minimal()
+  guides(color=FALSE)
 ggsave("figures/indicators.png", width=6, height=5, dpi = 300)
 ```
 
@@ -55,7 +64,7 @@ nitrogen[, value := as.numeric(value)]
 nitrogen[, measure := factor(measure, levels=c("ammonia", "nitrite", "nitrate"))]
 ggplot(nitrogen, aes(x=time, y=value, color=measure)) + 
   geom_point() + stat_smooth(aes(fill = measure)) + facet_grid(measure ~ tank, scales="free_y") +
-  geom_vline(xintercept=sampling_dates, lty="dashed") + theme_minimal() +
+  geom_vline(xintercept=sampling_dates, lty="dashed") +
   guides(color = FALSE, fill = FALSE) +
     labs(x = "time [days]", y = "concentration [ppm]")
 ggsave("figures/nitrogen_time.png", width = 8, height = 4, dpi = 300)
@@ -77,7 +86,7 @@ aucs <- nitrogen[, .(auc = trapz(time, value), inoculum = inoculum[1]), by=c("me
 plants <- as(sample_data(readRDS("data/taxonomy.rds")), "data.frame")
 setDT(plants)
 plants[, tank := factor(tank)]
-plants <- melt(plants[sample_set == "T2" & environment == "bioball"], 
+plants <- melt(plants[sample_set == "T2" & compartment == "bioball"], 
                id.vars="tank", measure.vars = c("no_leaves", "root_length", "height"), 
                variable.name = "plant_measure")
 
