@@ -32,12 +32,12 @@ sampled[, date := as.Date(date)]
 
 Height Growth bed
 
-```{r, fig.width=6, fig.height=3.5}
+```{r, fig.width=5, fig.height=3}
 ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], 
        aes(x = time, y = height_avg, col = inoculum)) + 
   geom_point() + stat_summary(aes(group = tank), fun.y = mean, geom = "line") + 
   labs(x = "time [days]", y = "average plant height [cm]", color = "")
-ggsave("figures/plant_height_avg.svg", width = 6, height = 3.5)
+ggsave("figures/plant_height_avg.svg", width = 5, height = 3)
 ```
 
 
