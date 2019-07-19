@@ -21,7 +21,6 @@ established[, "inoculum" := "established source"]
 established[, "time" := as.Date(time, "2018-01-01")] # random only used to convert type
 established[, "time" := difftime(time, time[1], units = "days")]
 established[, "sample" := "Growth Bed"]
-plants <- rbind(plants, established, fill = TRUE)
 ```
 
 ## Time courses
@@ -37,7 +36,6 @@ Height Growth bed
 ggplot(plants[sample == "Growth Bed" & !is.na(height_avg)], 
        aes(x = time, y = height_avg, col = inoculum)) + 
   geom_point() + stat_summary(aes(group = tank), fun.y = mean, geom = "line") + 
-  scale_color_manual(values = c(scales::hue_pal()(2), "darkgray")) +
   labs(x = "time [days]", y = "average plant height [cm]", color = "")
 ggsave("figures/plant_height_avg.svg", width = 6, height = 3.5)
 ```

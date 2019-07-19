@@ -73,7 +73,7 @@ ggsave("figures/dynamics.pdf")
 ```
 ## Richness
 
-```{r, fig.width=5, fig.height=3.5}
+```{r, fig.width=4.5, fig.height=3}
 alpha <- cbind(
   estimate_richness(rarefy_even_depth(ps, 3000))[sample_names(ps), ], 
   sample_data(ps))
@@ -83,7 +83,7 @@ ggplot(alpha, aes(x = sample_set, y = Shannon, color = inoculum,
         geom_point(position = position_dodge(width=0.5)) +
         scale_color_manual(values = inoc_cols) +
   labs(x = "time point", y = "alpha diversity [Shannon index]")
-ggsave("figures/diversity.svg", width = 5, height = 3.5)
+ggsave("figures/diversity.svg", width = 4.5, height = 3)
 ```
 
 Corresponding tests:
