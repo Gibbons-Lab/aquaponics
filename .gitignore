@@ -117,3 +117,4 @@ data/raw
 data/*.fa.gz
 data/alignments
 data/taxmap*
+*.tif
