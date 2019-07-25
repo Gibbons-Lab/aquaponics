@@ -6,7 +6,8 @@ available as:
 **Negative plant-microbiome feedback limits productivity in aquaponics**<br>
 Jessica A Day, Anne E Otwell, Christian Diener, Kourtney E Tams, Brad M Bebout,
 Angela M Detweiler, Michael D Lee, Madeline T Scott, Wilson Ta, Monica Ha,
-Shienna A Carreon, Kenny Tong, Abdirizak A Ali, Sean M Gibbons, Nitin S Baliga
+Shienna A Carreon, Kenny Tong, Abdirizak A Ali, Sean M Gibbons, Nitin S Baliga<br>
+https://doi.org/10.1101/709162
 
 Ask questions or report issues at https://github.com/gibbons-lab/aquaponics/issues.
 
