@@ -70,10 +70,10 @@ To reproduce the steps open the top level of this repository and open any of
 the `*.rmd` files mentioned below. The output of each step is linked as
 well.
 
-- Perform quality checks for tanks [notebook](tank_metrics.rmd) | [output](docs/tank_metrics.nb.html)
-- Analyze plant metrics [notebook](plant_metrics.rmd) | [output](docs/plant_metrics.nb.html)
-- Analyze general microbiome features [notebook](general.rmd) | [output](docs/general.nb.html)
-- Get associations between microbes and inocula/plant growth [notebook](docs/associations.rmd) | [output](associations.nb.html)
+- Perform quality checks for tanks [notebook](tank_metrics.rmd) | [output](https://gibbons-lab.github.io/aquaponics/tank_metrics.nb.html)
+- Analyze plant metrics [notebook](plant_metrics.rmd) | [output](https://gibbons-lab.github.io/aquaponics/plant_metrics.nb.html)
+- Analyze general microbiome features [notebook](general.rmd) | [output](https://gibbons-lab.github.io/aquaponics/general.nb.html)
+- Get associations between microbes and inocula/plant growth [notebook](associations.rmd) | [output](https://gibbons-lab.github.io/aquaponics/associations.nb.html)
 
 ## Nanopore benchmarks
 

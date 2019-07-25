@@ -38,5 +38,5 @@ Rscript -e "options(mc.cores = 10); source('nanopore.R')"
 This is again separated into a set of analysis steps which can be reproduced
 in Rstudio by opening the mentioned notebooks.
 
-- show improved performance of EM counting [notebook](methods.rmd) | [output](../docs/methods.nb.html)
-- compare Nanopore and Illumina data [notebook](comparison.rmd) | [output](../docs/comparison.nb.html)
+- show improved performance of EM counting [notebook](methods.rmd) | [output](https://gibbons-lab.github.io/aquaponics/methods.nb.html)
+- compare Nanopore and Illumina data [notebook](comparison.rmd) | [output](https://gibbons-lab.github.io/aquaponics/comparison.nb.html)
