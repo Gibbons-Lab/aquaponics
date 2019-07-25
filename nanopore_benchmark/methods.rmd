@@ -1,0 +1,49 @@
+---
+title: "EM algorithm comparison"
+output: html_notebook
+---
+
+# EM algorithm comparison
+
+We will now see whether the EM algorithm can resolve at least some
+of the spurious mapping. For that we will compare it to the standard method
+of calling mapping by the best alignment score and/or mapping score.
+
+We start by reading our count data for both methods.
+
+```{r}
+library(mbtools)
+
+counts <- fread("nanopore_counts.csv")
+counts <- counts[sample %in% c("barcode01", "barcode05")]
+head(counts)
+```
+
+We could just compare how many unique references were hit but in general we will
+also apply abundance cutoffs to our data, so let us count the number of unique references by cutoff.
+
+```{r}
+cutoffs <- 10 ^ seq(-1, 3, length.out = 16)
+nref <- lapply(cutoffs, function(co) {
+    nr <- counts[counts > co, .N, by = c("method", "sample")]
+    nr[, "cutoff" := co]
+    nr
+}) %>% rbindlist()
+head(nref)
+```
+
+Now let's visualize that.
+
+```{r}
+ggplot(nref, aes(x = cutoff, y = N, color = method)) + 
+    geom_point() + geom_line() + scale_x_log10() +
+    facet_wrap(~ sample) + 
+    labs(x = "abundance cutoff", y = "no. unique references")
+
+ggsave("figures/algorithms.png", width = 8, height = 3)
+```
+
+As we can see the EM algorithm can resolve spurious mappings well for low
+abundance where it reduces the spurious mappings by about half. For higher abundances 
+both methods work equally well since there is sufficient coverage to resolve the
+correct 16S reference.

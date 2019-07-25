@@ -103,3 +103,17 @@ venv.bak/
 # mypy
 .mypy_cache/
 .Rproj.user
+
+# old files
+data_and_code
+prelim_figures
+README.txt
+*.tsv
+.benchmarks
+*.py
+
+# too large files
+data/raw
+data/*.fa.gz
+data/alignments
+data/taxmap*

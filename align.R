@@ -15,17 +15,15 @@ config <- list(
         truncLen = 1500,
         maxEE = 200,
         out_dir = "data/filtered",
-        threads = 20,
         truncQ = 0,
         maxN = 2
     ),
     align = config_align(
-        reference = "silva_132_dna_nr99.fa.gz",
-        threads = 20,
-        alignment_dir = "data/alignments"
+        reference = "data/silva_132_dna_nr99.fa.gz",
+        alignment_dir = "data/alignments",
+        limited_memory = FALSE
     ),
     count = config_count(
-        threads = 20,
         weights = TRUE
     )
 )
@@ -58,7 +56,7 @@ ids <- mat$reference
 mat[, reference := NULL]
 mat <- as.matrix(mat)
 rownames(mat) <- ids
-taxa <- counts_ann[, .(id, kingdom, phylum, class, order, 
+taxa <- counts_ann[, .(id, kingdom, phylum, class, order,
 		       family, genus, species)][, .SD[1], by = id]
 setkey(taxa, "id")
 taxa <- as.matrix(taxa[rownames(mat)])

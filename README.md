@@ -1,29 +1,81 @@
 ## :fish: :seedling: :tada: ISB Aquaponics
 
-Analysis code and scripts for the Aquaponics collab with Jessica Day et. al.
+Analysis code and scripts for the Aquaponics project with Jessica Day et. al.
+available as:
 
-## Preprocessing
+**Negative plant-microbiome feedback limits productivity in aquaponics**<br>
+Jessica A Day, Anne E Otwell, Christian Diener, Kourtney E Tams, Brad M Bebout,
+Angela M Detweiler, Michael D Lee, Madeline T Scott, Wilson Ta, Monica Ha,
+Shienna A Carreon, Kenny Tong, Abdirizak A Ali, Sean M Gibbons, Nitin S Baliga
 
-`preprocess.py` just rearranges the reads so that all reads for one sample
-get their own file. `dada2.R` was the original code to run the [DADA2](https://benjjneb.github.io/dada2/index.html)
-analysis on the Nanopore reads, but that one did not give any sensible results.
+Ask questions or report issues at https://github.com/gibbons-lab/aquaponics/issues.
 
-We continued with normal trimming and filtering with the following parameters:
+## Install required software
 
-- left trim: 10bp
-- length truncated to 1.5kbp
-- max 2 Ns per sequence
-- truncate when encountering first base with quality <1
-- max. of 100 expected errors per seq (Illumina model)
-- phiX removal
+We currently only support setups on MacOS or Linux.
+You will need R ([installation instructions](https://cloud.r-project.org/)),
+Rstudio ([installation instructions](https://www.rstudio.com/products/rstudio/download/))
+and minimap2. To install minimap2 we recommend using [miniconda](https://docs.conda.io/en/latest/miniconda.html)
+which allows you to install minimap2 with:
 
-The reads that passed the filter (around 30 - 50%) were passed off to the alignment step.
+```bash
+conda install -c bioconda minimap2
+```
 
-## Mapping
+All analysis is performed by [mbtools](https://gibbons-lab.github.io/mbtools).
+To install this package open your R console and use
 
-Reads were mapped to >300k 16S reference sequences from the SILVA database (version 132). Mapping was performed with minimap2
-using the Oxford Nanopore presets. Counting and resolution of multi-mapping was performed with an EM algorithm similar to what [kalliso uses](https://www.nature.com/articles/nbt.3519) assuming a single start position for each transcript. 
+```R
+install.packages(c("BiocManager", "remotes"))
+setRepositories(ind=1:2)
+remotes::install_github("gibbons-lab/mbtools")
+```
 
-see https://github.com/Gibbons-Lab/mbtools for implementation details.
+## Reproduce the study
+
+### 0. Download or clone the repository.
+
+You can download the repository using the green `Clone or download` on the
+top right. Alternatively you can use git to clone the repository:
+
+```bash
+git clone https://github.com/gibbons-lab/aquaponics
+```
+
+### 1. Download the data and SILVA DB
+
+*Coming soon* <br>
+This is not required to reproduce the next steps since a final abundance
+tables have already been placed in `data`.
+
+### 2. Align full-length reads to the SILVA and database and count with the [EM algorithm](https://gibbons-lab.github.io/mbtools/articles/06_counting.html)
+
+Again not required for the next steps. Everything is performed after downloading the
+data and SILVA DB and running the `align.R` script. Note that this will require
+large amounts of memory (~100GB) and several cores to be efficient. In case you have
+less memory set `limited_memory = TRUE` in the `align.R` script. The number
+of used threads will be inferred from `mc.cores` option in R. You can set it before
+running the script. For instance by using
+
+```bash
+Rscript -e "options(mc.cores = 10); source('align.R')"
+```
+
+### 3. Reproduce study analyses
+
+Each of the following steps can be run individually and out of order and
+will reproduce the figures found in the manuscript.
+To reproduce the steps open the top level of this repository and open any of
+the `*.rmd` files mentioned below. The output of each step is linked as
+well.
+
+- Perform quality checks for tanks [notebook](tank_metrics.rmd) | [output](docs/tank_metrics.nb.html)
+- Analyze plant metrics [notebook](plant_metrics.rmd) | [output](docs/plant_metrics.nb.html)
+- Analyze general microbiome features [notebook](general.rmd) | [output](docs/general.nb.html)
+- Get associations between microbes and inocula/plant growth [notebook](docs/associations.rmd) | [output](associations.nb.html)
+
+## Nanopore benchmarks
+
+Please see the [nanopore_benchmark](nanopore_benchmark) directory for details.
 
 
