@@ -13,6 +13,8 @@ We start by reading our count data for both methods.
 
 ```{r}
 library(mbtools)
+library(ggplot2)
+theme_set(theme_minimal())
 
 counts <- fread("nanopore_counts.csv")
 counts <- counts[sample %in% c("barcode01", "barcode05")]
