@@ -37,7 +37,7 @@ ggsave("figures/phyla.png", width = 8, height = 4, dpi = 300)
 ## Ordination
 
 ```{r, fig.width=5, fig.height=3.5}
-inoc_cols <- c(scales::hue_pal()(2), "gray60")
+inoc_cols <- c(scales::hue_pal()(2), "black")
 
 ord <- ordinate(rarefy_even_depth(ps, 3000), method="PCoA")
 plot_ordination(ps, ord, shape="compartment", color="inoculum") + 
@@ -112,7 +112,7 @@ names(labels)[2] <- "time point"
 label_cols <- list(
   compartment = c(inoculum = "white", `fish feces` = "lightsteelblue",
                   biofilter = "dodgerblue", root = "darkblue"),
-  `time point` = c(T0 = "white", T1 = "palegreen2", T2 = "palegreen4"),
+  `time point` = c(T0 = "white", T1 = "pink", T2 = "deeppink4"),
   inoculum = c(CIT = inoc_cols[2], EIT = inoc_cols[1], 
                `rock wool cubes` = inoc_cols[3])
 )
