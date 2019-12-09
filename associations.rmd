@@ -20,15 +20,29 @@ sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N
                                                       root_length=root_length_avg[.N]), 
                                                    by=tank]
 old <- fread("data/barcodes.csv")
-old[, inoculum := factor(inoculum, levels = c("EIT", "CIT"))]
+old[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
+old[, extraction_kit := factor(extraction_kit)]
 sdata <- as.data.frame(sdata[old, on = "tank"])
+# Read the greenhouse data
+greenhouse <- fread("data/greenhouse.csv")
+greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
+greenhouse[, time := difftime(date, date[1], units = "days")]
+greenhouse[, inoculum := "aquaponics system"]
+greenhouse[tank %in% 1:3, inoculum := "commercial"]
+greenhouse[, tank := factor(tank)]
+greenhouse <- greenhouse[order(-time, tank)]
+greenhouse <- greenhouse[, .(nitrate = sum(as.numeric(nitrate)), ammonia = sum(ammonia)), by="tank"]
+sdata <- merge(sdata, greenhouse, by = "tank", all = TRUE)
 sdata$isb_id[sdata$isb_id == "T0RW"] <- "T0R"
-rownames(sdata) <- old$isb_id
+rownames(sdata) <- sdata$isb_id
 sample_data(ps) <- sdata
 sample_names(ps)[sample_names(ps) == "T0RW"] <- "T0R"
+```
 
+
+```{r}
 subsets <- list(c("biofilter", "T2"), c("fish feces", "T0"), c("root", "T2"))
-vars <- c("no_leaves", "height", "root_length", "inoculum")
+vars <- c("no_leaves", "height", "root_length", "inoculum", "nitrate", "ammonia", "extraction_kit", "dead_fish")
 tests <- list()
 for (s in subsets) {
     psub <- subset_samples(ps, compartment == s[1] & sample_set == s[2])
