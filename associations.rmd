@@ -20,7 +20,7 @@ sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N
                                                       root_length=root_length_avg[.N]), 
                                                    by=tank]
 old <- fread("data/barcodes.csv")
-old[, inoculum := factor(inoculum, levels = c("established", "commercial"))]
+old[, inoculum := factor(inoculum, levels = c("EIT", "CIT"))]
 old[, extraction_kit := factor(extraction_kit)]
 sdata <- as.data.frame(sdata[old, on = "tank"])
 # Read the greenhouse data
@@ -28,15 +28,15 @@ greenhouse <- fread("data/greenhouse.csv")
 greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
 greenhouse[, time := difftime(date, date[1], units = "days")]
 greenhouse[, inoculum := "aquaponics system"]
-greenhouse[tank %in% 1:3, inoculum := "commercial"]
+greenhouse[tank %in% 1:3, inoculum := "CIT"]
 greenhouse[, tank := factor(tank)]
 greenhouse <- greenhouse[order(-time, tank)]
 greenhouse <- greenhouse[, .(nitrate = sum(as.numeric(nitrate)), ammonia = sum(ammonia)), by="tank"]
 sdata <- merge(sdata, greenhouse, by = "tank", all = TRUE)
 sdata$isb_id[sdata$isb_id == "T0RW"] <- "T0R"
+sample_names(ps)[sample_names(ps) == "T0RW"] <- "T0R"
 rownames(sdata) <- sdata$isb_id
 sample_data(ps) <- sdata
-sample_names(ps)[sample_names(ps) == "T0RW"] <- "T0R"
 ```
 
 
@@ -98,19 +98,21 @@ counts <- counts[sdata, on = c(sample = "isb_id")]
 counts[, relative := reads / sum(reads), by = "sample"]
 
 genera <- c("Pseudomonas", "Aeromonas", "Serratia", "Rahnella")
-counts <- counts[taxa %in% genera & compartment %in% c("biofilter", "root", "inoculum")]
+counts <- counts[taxa %in% genera & compartment %in% c("biofilter", "root", "inoculum", "rock wool cubes")]
 map <- rep(c("CIT", "EIT"), each = 3)
 initial <- counts[is.na(tank)]
 initial <- lapply(1:6, function(i) {
   co <- copy(initial) 
   co$tank <- i
-  co$inoculum[is.na(co$inoculum)] <- map[i]
+  co$inoculum <- map[i]
   co$compartment[co$compartment == "inoculum"] <- "biofilter"
   return(co)
 })
 initial[[7]] <- counts[!is.na(tank)]
 counts <- rbindlist(initial)
 counts[, inoculum := factor(inoculum, levels = c("CIT", "EIT"))]
+
+
 ```
 
 Now we can visualize the temporal changes:
