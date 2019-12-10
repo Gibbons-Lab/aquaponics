@@ -69,10 +69,27 @@ genera <- colnames(counts)[apply(counts, 2, function(x) sum(x > 300)) > 1]
 genera <- genera[!grepl("uncultured|metagenome", genera)]
 ```
 
-Let's visuzlize the effect sizes and significant tests.
+First let's have a look which genera associate with our confounders.
+
+```{r, fig.width=8, fig.height=2}
+confounders <- c("nitrogen", "ammonia", "nitrate", "dead_fish", "extraction_kit")
+ggplot(tests[padj < 0.05 & genus %chin% genera & variable %in% confounders],
+       aes(x = log2FoldChange, y = reorder(genus, -log2FoldChange),
+           color = baseMean)) +
+    geom_vline(xintercept = 0, lty = "dashed", color = "black") +
+    geom_point(size=2) +
+    geom_errorbarh(aes(xmin = log2FoldChange - lfcSE,
+                    xmax = log2FoldChange + lfcSE), height = 0.5) +
+    facet_grid(site ~ variable, scales = "free_y", space = "free_y") + 
+    scale_color_gradient(trans="log10") +
+    labs(x="log fold change", y="", color="abundance") + theme_minimal()
+ggsave(sprintf("figures/confounders.svg"), width = 8, height = 2)
+```
+
+Let's visuazlize the effect sizes and significant tests.
 
 ```{r, fig.width=8, fig.height=3}
-ggplot(tests[padj < 0.05 & genus %chin% genera],
+ggplot(tests[padj < 0.05 & genus %chin% genera & !variable %in% confounders],
        aes(x = log2FoldChange, y = reorder(genus, -log2FoldChange),
            color = baseMean)) +
     geom_vline(xintercept = 0, lty = "dashed", color = "black") +
