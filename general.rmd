@@ -24,9 +24,10 @@ sdata <- sdata[order(date)][sample == "Growth Bed", .(no_leaves=no_leaves_avg[.N
                                                       root_length=root_length_avg[.N]), 
                                                    by=tank]
 old <- fread("data/barcodes.csv")
-old[, inoculum := factor(inoculum, levels = c("EIT", "CIT", "rock wool cubes"))]
+old[, inoculum := factor(inoculum, levels = c("CIT", "EIT", "rock wool cubes"))]
 old[, extraction_kit := factor(extraction_kit)]
 sdata <- as.data.frame(sdata[old, on = "tank"])
+
 # Read the greenhouse data
 greenhouse <- fread("data/greenhouse.csv")
 greenhouse[, date := as.Date(date, format = "%m/%d/%y")]
@@ -108,11 +109,11 @@ alpha <- cbind(
   estimate_richness(rarefy_even_depth(ps, 9000))[sample_names(ps), ], 
   sample_data(ps))
 
-ggplot(alpha, aes(x = sample_set, y = Shannon, color = inoculum, 
+ggplot(alpha, aes(x = factor(day), y = Shannon, color = inoculum, 
                         shape = compartment, group = inoculum)) +        
         geom_point(position = position_dodge(width=0.5)) +
         scale_color_manual(values = inoc_cols) +
-  labs(x = "time point", y = "alpha diversity [Shannon index]")
+  labs(x = "time [days]", y = "alpha diversity [Shannon index]")
 ggsave("figures/diversity.svg", width = 4.5, height = 3)
 ```
 
@@ -176,12 +177,14 @@ library(pheatmap)
 counts <- as.matrix(taxa_count(ps))
 counts <- counts[, apply(counts, 2, function(x) sum(x > 300) > 1)]
 counts <- counts[, !grepl("uncultured|metagenome", colnames(counts))]
-labels <- sdata[, c("compartment", "sample_set", "inoculum")]
-names(labels)[2] <- "time point"
+labels <- sdata[, c("compartment", "day", "inoculum")]
+names(labels)[2] <- "time"
+time_col <- colorRamp(c("white", "deeppink4"))((sdata$day + 1) / 62) %>% rgb(max = 255)
+names(time_col) <- sdata$day
 label_cols <- list(
   compartment = c(inoculum = "white", `fish feces` = "lightsteelblue",
                   biofilter = "dodgerblue", root = "darkblue"),
-  `time point` = c(T0 = "white", T1 = "pink", T2 = "deeppink4"),
+  time = c("white", "deeppink4"),
   inoculum = c(CIT = inoc_cols[2], EIT = inoc_cols[1], 
                `rock wool cubes` = inoc_cols[3])
 )
