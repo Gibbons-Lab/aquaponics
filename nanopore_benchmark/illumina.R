@@ -13,7 +13,7 @@ conf <- list(
     filter = config_preprocess(
         trimLeft = 10,
         truncLen = c(230, 230),
-        out_dir = "illumina_filtered"
+        out_dir = "data/illumina_filtered"
     ),
     denoise = config_denoise()
 )

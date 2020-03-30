@@ -83,7 +83,7 @@ trapz <- function(x, y) {
 }
 
 aucs <- nitrogen[, .(auc = trapz(time, value), inoculum = inoculum[1]), by=c("measure", "tank")]
-plants <- sdata
+plants <- as(sample_data(readRDS("data/taxonomy.rds")), "data.frame") %>% setDT()
 plants[, tank := factor(tank)]
 plants <- melt(plants[sample_set == "T2" & compartment == "biofilter"], 
                id.vars="tank", measure.vars = c("no_leaves", "root_length", "height", "dead_fish"), 
@@ -92,7 +92,7 @@ plants <- melt(plants[sample_set == "T2" & compartment == "biofilter"],
 aucs <- aucs[plants, on="tank", allow.cartesian = T]
 
 ggplot(aucs, aes(x=value, y=auc, color=inoculum)) + geom_point() + 
-  facet_grid(measure ~ plant_measure, scales="free") + theme_light() +
+  facet_grid(measure ~ plant_measure, scales="free") +
     stat_smooth(method="lm", aes(group = 1))
 ggsave("data/aucs_nitrogen.pdf")
 ```

@@ -3,7 +3,7 @@ library(mbtools)
 pattern <- "(\\w+)\\.fastq"
 annotations <- c("id")
 
-files <- find_read_files("data/illumina.R", pattern = pattern,
+files <- find_read_files("data/nanopore", pattern = pattern,
                          annotations = annotations)
 quals <- files %>% quality_control()
 ggsave("figures/nanopore_quals.png", plot = quals$quality_plot, dpi = 300)
@@ -13,13 +13,13 @@ config <- list(
         trimLeft = 10,
         truncLen = 1500,
         maxEE = 200,
-        out_dir = "nanopore_filtered",
+        out_dir = "data/nanopore_filtered",
         truncQ = 0,
         maxN = 2
     ),
     align = config_align(
         reference = "../data/silva_132_dna_nr99.fa.gz",
-        alignment_dir = "alignments"
+        alignment_dir = "data/alignments"
     ),
     count = config_count()
 )
@@ -27,6 +27,7 @@ config <- list(
 
 if (!file.exists("nanopore.rds")) {
     artifact <- quals %>% preprocess(config$preprocess) %>%
+                          remove_chimeras() %>%
                           align_long_reads(config$align) %>%
                           count_references(config$count)
     saveRDS(artifact, "nanopore.rds")
@@ -36,8 +37,9 @@ if (!file.exists("nanopore.rds")) {
 
 if (!file.exists("nanopore_naive.rds")) {
     artifact_naive <- quals %>% preprocess(config$preprocess) %>%
-        align_long_reads(config$align) %>%
-        count_references(method = "naive")
+                                remove_chimeras() %>%
+                                align_long_reads(config$align) %>%
+                                count_references(method = "naive")
     saveRDS(artifact_naive, "nanopore_naive.rds")
 } else {
     artifact_naive <- readRDS("nanopore_naive.rds")
@@ -53,7 +55,7 @@ counts_ann <- anns[counts, on = c(id = "reference")]
 fwrite(counts_ann, "nanopore_counts.csv")
 
 # Build the fully annotated phyloseq object
-mat <- dcast(counts[method == "em"], reference ~ sample,
+mat <- dcast(counts[method == "em" & !is.na(reference)], reference ~ sample,
 	     value.var = "counts", fill = 0)
 ids <- mat$reference
 mat[, reference := NULL]
