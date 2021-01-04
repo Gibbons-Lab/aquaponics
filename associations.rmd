@@ -113,8 +113,10 @@ counts[, inoculum := factor(inoculum, levels = c("CIT", "EIT"))]
 Now we can visualize the temporal changes:
 
 ```{r, fig.width = 8, fig.height = 3}
+pos <- position_dodge(width=0.4)
 ggplot(counts, aes(x = sample_set, y = relative, col = inoculum, group = interaction(tank, inoculum))) +
-  geom_point() + geom_line() +
+  geom_line(position=pos, size=0.8) +
+  geom_point(aes(fill=inoculum), pch=21,  color="black", stroke=0.5, size=2.5, position=pos) +
   facet_grid(compartment ~ taxa, scales = "free_y") +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "time point", y = "relative abundance") + theme_minimal()
