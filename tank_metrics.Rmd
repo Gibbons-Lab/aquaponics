@@ -44,6 +44,11 @@ ggplot(indicators[!is.na(value)], aes(x=time, y=value, color=inoculum, fill = in
 ggsave("figures/indicators_time.png", width=8, height=6, dpi=300)
 ```
 
+And the tests:
+
+```{r}
+indicators[!is.na(value), t.test(value ~ inoculum, data=.SD), by="measure"]
+```
 
 As boxplots
 
