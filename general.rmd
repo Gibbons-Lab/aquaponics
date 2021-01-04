@@ -208,16 +208,26 @@ counts[order(-reads), .(taxa = taxa[1:5], reads = reads[1:5]), by = "compartment
 
 Heatmap for Nitrifiers:
 
-```{r, fig.height=2.1, fig.width=8}
+```{r, fig.height=5, fig.width=2}
 library(pheatmap)
 
 counts <- as.matrix(taxa_count(ps, zeros = TRUE)[grepl("Nitro", taxa)])
-pheatmap(log10(t(counts) + 1))
+all_counts <- as.matrix(taxa_count(ps, zeros = TRUE))
+pheatmap(counts / rowSums(all_counts), cluster_rows = F, cluster_cols = F, 
+         color = viridis::viridis(128), width = 2, height = 5, 
+         filename = "figures/nitrifiers.pdf")
+pheatmap(counts / rowSums(all_counts), cluster_rows = F, cluster_cols = F, 
+         color = viridis::viridis(128))
 ```
 
-As percentages:
+# Covariates for nitrate levels
 
-```{r, fig.height=3, fig.width=8}
-all_counts <- as.matrix(taxa_count(ps, zeros = TRUE))
-pheatmap(t(counts / rowSums(all_counts)) * 100)
+```{r}
+data <- as(sample_data(ps), "data.frame") %>% setDT()
+# avoid duplicate data
+data <- data[compartment == "biofilter" & sample_set == "T2"]
+mod <- aov(nitrate ~ inoculum + dead_fish, data = data)
+an <- anova(mod)
+an$R2 <- an[, 2] / sum(an[, 2])
+an
 ```

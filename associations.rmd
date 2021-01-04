@@ -120,3 +120,4 @@ ggplot(counts, aes(x = sample_set, y = relative, col = inoculum, group = interac
   labs(x = "time point", y = "relative abundance") + theme_minimal()
 ggsave("figures/pathogens_time.svg", width = 8, height = 3)
 ```
+
