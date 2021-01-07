@@ -81,6 +81,7 @@ We will plot the area under the curve vs the plant measure.
 
 ```{r}
 library(phyloseq)
+library(magrittr)
 
 trapz <- function(x, y) {
   y[is.na(y)] <- 0
@@ -106,8 +107,8 @@ And the corresponding statistics:
 
 ```{r}
 tests <- aucs[, .(
-  rsquared = summary(lm(value ~ auc))$r.squared,
-  pval = anova(lm(value ~ auc))[1, 5]
+  rho = cor(value, auc, method="spearman"),
+  pval = cor.test(~ value + auc, method="spearman")$p.value
   ), by = c("measure", "plant_measure")]
 tests[pval<0.1]
 ```
