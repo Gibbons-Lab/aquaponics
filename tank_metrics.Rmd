@@ -22,7 +22,7 @@ indicators <- greenhouse[, .(time, tank, inoculum,
                              `alkalinity (ppm)` = alkalinity, pH, 
                              `conductivity (uS/cm)`, 
                              `hardness (ppm)` = hardness, 
-                             `total fish food (#pellets)` = `total fish food`, 
+                             # `total fish food (#pellets)` = `total fish food`, 
                              `water added (L)`, 
                              `water temperature (ºC)` = `water temperature`, 
                              `greenhouse humidity (%)` = greenhouse_humidity)]
